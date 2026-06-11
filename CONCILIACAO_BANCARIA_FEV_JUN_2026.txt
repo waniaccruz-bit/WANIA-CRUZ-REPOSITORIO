@@ -1,0 +1,149 @@
+══════════════════════════════════════════════════════════════════════════════════════════
+                    CONCILIAÇÃO BANCÁRIA - EXCLUSIVA SERVICE LTDA
+                    Extrato Nubank: 07/02/2026 a 10/06/2026
+                    Planilha: CONTROLE DE COMPRADORES 12.04.26
+══════════════════════════════════════════════════════════════════════════════════════════
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. RESUMO DE ENTRADAS POR COMPRADOR (EXTRATO BANCÁRIO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COMPRADOR                          | FEV/26  | MAR/26  | ABR/26  | MAI/26  | JUN/26  | TOTAL
+─────────────────────────────────────────────────────────────────────────────────────────────────
+ANDREZA SANTANA DAMACENO           |  250,00 |  250,00 |    -    |  280,00 |    -    |    780,00
+EDSON EMILIO DA COSTA              |  250,00 |  250,00 |  250,00 |  250,00 |  250,00 |  1.250,00
+EDUARDO RODRIGUES DA SILVA         |  250,00 |  250,00 |  250,00 |  250,00 |  250,00 |  1.250,00
+GILBERTO MUNIN JUNIOR              |1.000,00 |    -    |    -    |    -    |    -    |  1.000,00
+GRACIANA PEREIRA LOURENCO          |    -    |    -    |    -    |  500,00 |    -    |    500,00
+JEFFERSON LUIZ SANTOS ALVES        |    -    |  250,00 |    -    |    -    |    -    |    250,00
+KEVIN DANIEL SANTOS FIGUEIREDO     |  250,00 |  250,00 |  250,00 |  250,00 |  250,00 |  1.250,00
+MARIA PEREIRA DA SILVA LIMA        |  750,00 |  750,00 |  500,00 |    -    |    -    |  2.000,00
+NILTON J PEREIRA                   |  250,00 |  250,00 |  250,00 |  250,00 |  250,00 |  1.250,00
+RACHEL DA CRUZ                     |  500,00 |  500,00 |  500,00 |  500,00 |    -    |  2.000,00
+VANDICE EUZEBIO DOS SANTOS         |  250,00 |  250,00 |    -    |  250,00 |    -    |    750,00
+VINICIUS NICOLAS DE ALMEIDA        |    -    |    -    |    -    |    -    |  250,00 |    250,00
+─────────────────────────────────────────────────────────────────────────────────────────────────
+TOTAL                              |3.750,00 |3.000,00 |2.000,00 |2.530,00 |1.250,00 | 12.530,00
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. CONCILIAÇÃO: EXTRATO x PLANILHA (Meses com dados na planilha: FEV, MAR, ABR 2026)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+COMPRADOR                          | Mês    | Extrato | Planilha | Status
+───────────────────────────────────────────────────────────────────────────────
+ANDREZA SANTANA DAMACENO (Lote 18) | FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+EDSON EMILIO DA COSTA (Lote 27)    | FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | ABR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+EDUARDO RODRIGUES DA SILVA (Lote 9)| FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | ABR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+GILBERTO MUNIN JUNIOR (Lotes 28,29)| FEV/26 |1.000,00 | 1.000,00 | ✓ CONFERE
+                                   | MAR/26 |    0,00 |     0,00 | SEM PAGAMENTO
+───────────────────────────────────────────────────────────────────────────────
+JEFFERSON L. SANTOS ALVES (Lote 3) | FEV/26 |    0,00 |     0,00 | SEM PAGAMENTO
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+KEVIN D. S. FIGUEIREDO (Lote 10)   | FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | ABR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+MARIA P. DA SILVA LIMA (Lotes 1,2, | FEV/26 |  750,00 |   750,00 | ✓ CONFERE
+  20,29,30)                        | MAR/26 |  750,00 |   750,00 | ✓ CONFERE
+                                   | ABR/26 |  500,00 |   750,00 | ⚠ DIFERENÇA -250,00
+───────────────────────────────────────────────────────────────────────────────
+NILTON J PEREIRA (Lote 19)         | FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | ABR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+RACHEL DA CRUZ (Lotes 23,24)       | FEV/26 |  500,00 |   500,00 | ✓ CONFERE
+                                   | MAR/26 |  500,00 |   500,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+VANDICE EUZEBIO DOS SANTOS (Lote 7)| FEV/26 |  250,00 |   250,00 | ✓ CONFERE
+                                   | MAR/26 |  250,00 |   250,00 | ✓ CONFERE
+───────────────────────────────────────────────────────────────────────────────
+VINICIUS N. DE ALMEIDA (Lote 22)   | FEV/26 |    0,00 |     0,00 | SEM PAGAMENTO
+                                   | MAR/26 |    0,00 |     0,00 | SEM PAGAMENTO
+───────────────────────────────────────────────────────────────────────────────
+GRACIANA PEREIRA LOURENCO          |   -    |  500,00 |     N/A  | ⚠ NÃO CONSTA NA PLANILHA
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. SAÍDAS NO PERÍODO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  09/02/2026  Pagamento boleto - GEAZI ASSIS DE SOUZA OLIVEIRA     R$      195,50
+  16/03/2026  Aplicação RDB                                        R$    9.600,00
+  22/04/2026  Aplicação RDB                                        R$    2.700,00
+  19/05/2026  Aplicação RDB                                        R$    2.000,00
+  ────────────────────────────────────────────────────────────────────────────────
+  TOTAL DE SAÍDAS                                                  R$   14.495,50
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. COMPRADORES INADIMPLENTES (sem pagamento no período FEV-JUN/26)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Lotes 4,5  - RAPHAEL PINHEIRO .............. Inadimplente desde Dez/2024
+  Lote 6     - JOSE AMARO DO NASCIMENTO ...... Nunca pagou
+  Lote 8     - ANDERSON DE JESUS PAIVA ....... Pagamentos irregulares desde Jun/2025
+  Lote 11    - LUCIANA SILVA CABRAL LOBATO ... Pagamentos irregulares desde Mar/2025
+  Lote 13    - FELIPE SANTOS DE OLIVEIRA ..... Inadimplente desde Nov/2024
+  Lote 26    - LEANDRO A SILVA ............... Pagamentos irregulares desde Set/2025
+  Lotes 17,21- HERALDO DE ALMEIDA SOUZA ...... Inadimplente desde Abr/2025
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. DIVERGÊNCIAS E PONTOS DE ATENÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. GRACIANA PEREIRA LOURENCO - Pagou R$ 500,00 em 15/05/2026 via Pix (Banco Inter),
+     porém NÃO consta como compradora na planilha de controle.
+     → Ação: Verificar se é compradora nova ou pagamento feito por terceiro.
+
+  2. ANDREZA SANTANA DAMACENO - Pagou R$ 30,00 em 26/05/2026 (parcela habitual: R$ 250,00).
+     → Ação: Verificar se é pagamento parcial, ajuste ou devolução.
+
+  3. MARIA PEREIRA DA SILVA LIMA - Em ABR/26 pagou R$ 500,00 (3 lotes pagam R$ 750/mês).
+     → Ação: Verificar qual lote ficou sem pagamento em abril.
+
+  4. GILBERTO MUNIN JUNIOR - Pagou R$ 1.000,00 somente em FEV/26. Sem pagamentos MAR-JUN/26.
+     → Ação: Cobrar parcelas em atraso.
+
+  5. JEFFERSON LUIZ SANTOS ALVES - Pagou apenas R$ 250,00 (MAR/26). Sem pagamento FEV, ABR-JUN/26.
+     → Ação: Cobrar parcelas em atraso.
+
+  6. VANDICE EUZEBIO DOS SANTOS - Sem pagamento em ABR/26 e JUN/26.
+     → Ação: Verificar se houve atraso ou se será regularizado.
+
+  7. VINICIUS NICOLAS DE ALMEIDA - Pagou R$ 250,00 apenas em JUN/26.
+     Na planilha consta inadimplente em diversos meses anteriores.
+     → Ação: Verificar situação de regularização.
+
+  8. RACHEL DA CRUZ - Pagou R$ 500/mês (FEV-MAI/26), mas sem pagamento em JUN/26.
+     → Ação: Parcela de junho pode estar pendente (extrato vai até 11/06).
+
+  9. ANDREZA SANTANA DAMACENO - Sem pagamento em ABR/26 no extrato.
+     → Ação: Verificar se pagou por outro meio ou se está em atraso.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. RESUMO FINANCEIRO DO PERÍODO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Saldo inicial (23/01/2026):          R$   3.803,86
+  (+) Total de entradas:               R$  12.530,00
+  (+) Rendimento líquido:              R$       2,93
+  (-) Total de saídas:                 R$  14.495,50
+      ├─ Aplicações RDB:              R$  14.300,00
+      └─ Pagamento boleto (Geazi):     R$     195,50
+  ═══════════════════════════════════════════════════
+  (=) Saldo final (11/06/2026):        R$   1.841,29  ✓ CONFERE
+
+══════════════════════════════════════════════════════════════════════════════════════════
+
