@@ -30,21 +30,36 @@ body {
 }
 
 .header {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  background: linear-gradient(135deg, #0a1628, var(--primary), var(--primary-light));
   color: white;
-  padding: 24px 40px;
+  padding: 20px 40px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
 
-.header h1 {
-  font-size: 1.6em;
+.header-logo {
+  flex-shrink: 0;
+}
+
+.header-text h1 {
+  font-size: 1.4em;
   font-weight: 600;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-.header p {
-  font-size: 0.9em;
+.header-text p {
+  font-size: 0.85em;
   opacity: 0.85;
+}
+
+.header-text .brand-line {
+  font-size: 0.72em;
+  opacity: 0.6;
+  margin-top: 4px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
 }
 
 .container {
@@ -511,8 +526,38 @@ input[type="file"] { display: none; }
 <body>
 
 <div class="header">
-  <h1>Auditoria de Recebiveis</h1>
-  <p>Gerador de Relatorios de Auditoria Documental e Financeira</p>
+  <div class="header-logo">
+    <svg width="160" height="56" viewBox="0 0 160 56" xmlns="http://www.w3.org/2000/svg">
+      <!-- Icone: escudo/diamante estilizado -->
+      <defs>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#d4a34a"/>
+          <stop offset="50%" style="stop-color:#f0d07a"/>
+          <stop offset="100%" style="stop-color:#c4923a"/>
+        </linearGradient>
+        <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#c4923a"/>
+          <stop offset="50%" style="stop-color:#f0d07a"/>
+          <stop offset="100%" style="stop-color:#c4923a"/>
+        </linearGradient>
+      </defs>
+      <!-- Diamante / escudo -->
+      <polygon points="24,4 44,18 44,38 24,52 4,38 4,18" fill="none" stroke="url(#goldGrad)" stroke-width="2"/>
+      <polygon points="24,10 38,20 38,36 24,46 10,36 10,20" fill="url(#goldGrad)" opacity="0.15"/>
+      <!-- Letra E estilizada no centro -->
+      <text x="24" y="34" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700" fill="url(#goldGrad)">E</text>
+      <!-- Nome EXCLUSIVA -->
+      <text x="54" y="28" font-family="Georgia, 'Times New Roman', serif" font-size="18" font-weight="700" fill="url(#goldGrad)" letter-spacing="3">EXCLUSIVA</text>
+      <!-- Linha decorativa -->
+      <line x1="54" y1="34" x2="155" y2="34" stroke="url(#goldGrad2)" stroke-width="0.8"/>
+      <!-- Subtitulo -->
+      <text x="54" y="44" font-family="'Segoe UI', Tahoma, sans-serif" font-size="7.5" fill="#8eafc4" letter-spacing="3.5">AUDITORIA &amp; COMPLIANCE</text>
+    </svg>
+  </div>
+  <div class="header-text">
+    <h1>Auditoria de Recebiveis</h1>
+    <p>Gerador de Relatorios de Auditoria Documental e Financeira</p>
+  </div>
 </div>
 
 <div class="container">
