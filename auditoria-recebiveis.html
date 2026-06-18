@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auditoria de Recebíveis - Gerador de Relatórios</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --primary: #1a3a5c;
+  --primary-light: #2c5f8a;
+  --accent: #e67e22;
+  --success: #27ae60;
+  --danger: #c0392b;
+  --bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #dce1e8;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  padding: 24px 40px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.header h1 {
+  font-size: 1.6em;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.header p {
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.section-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .step-badge {
+  background: var(--primary);
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85em;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.model-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.model-option {
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+  position: relative;
+}
+
+.model-option:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.model-option.selected {
+  border-color: var(--primary);
+  background: #eef3f8;
+}
+
+.model-option.selected::after {
+  content: '\2713';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--success);
+  font-weight: 700;
+  font-size: 1.2em;
+}
+
+.model-option h3 {
+  font-size: 1em;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.model-option p {
+  font-size: 0.8em;
+  color: var(--text-light);
+  line-height: 1.4;
+}
+
+.model-option .tabs-list {
+  font-size: 0.72em;
+  color: var(--text-light);
+  margin-top: 10px;
+  text-align: left;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s;
+}
+
+.model-option.selected .tabs-list {
+  max-height: 300px;
+}
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.upload-item {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.upload-item:hover {
+  border-color: var(--primary-light);
+}
+
+.upload-item.loaded {
+  border-color: var(--success);
+  border-style: solid;
+  background: #f0faf4;
+}
+
+.upload-item .label {
+  font-weight: 600;
+  font-size: 0.95em;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.upload-item .description {
+  font-size: 0.78em;
+  color: var(--text-light);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.upload-item .file-info {
+  font-size: 0.78em;
+  color: var(--success);
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.upload-item .file-info .row-count {
+  color: var(--text-light);
+  font-weight: 400;
+}
+
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.btn-upload:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.75em;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-item.loaded .btn-remove { display: flex; }
+
+.config-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.config-field label {
+  display: block;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.config-field input,
+.config-field select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.9em;
+  color: var(--text);
+  transition: border-color 0.15s;
+}
+
+.config-field input:focus,
+.config-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.btn-generate {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(26,58,92,0.3);
+}
+
+.btn-generate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(26,58,92,0.4);
+}
+
+.btn-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  padding: 14px 30px;
+  background: white;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #eef3f8;
+}
+
+.status-bar {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 16px 24px;
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  display: none;
+}
+
+.status-bar.visible { display: block; }
+
+.status-bar .progress-bar {
+  height: 6px;
+  background: #e0e5ec;
+  border-radius: 3px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.status-bar .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 3px;
+  transition: width 0.4s;
+  width: 0%;
+}
+
+.status-bar .status-text {
+  font-size: 0.85em;
+  color: var(--text-light);
+}
+
+.preview-section {
+  margin-top: 20px;
+  display: none;
+}
+
+.preview-section.visible { display: block; }
+
+.preview-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0;
+}
+
+.preview-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font-size: 0.82em;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.preview-tab:hover {
+  color: var(--primary);
+}
+
+.preview-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.preview-table-wrapper {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78em;
+  white-space: nowrap;
+}
+
+.preview-table th {
+  background: var(--primary);
+  color: white;
+  padding: 8px 12px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.preview-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.preview-table tr:nth-child(even) td {
+  background: #f8f9fb;
+}
+
+.preview-table tr:hover td {
+  background: #eef3f8;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 14px 24px;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9em;
+  font-weight: 500;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  z-index: 1000;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s;
+}
+
+.toast.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast.success { background: var(--success); }
+.toast.error { background: var(--danger); }
+.toast.info { background: var(--primary); }
+
+.required-badge {
+  font-size: 0.7em;
+  background: var(--danger);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.optional-badge {
+  font-size: 0.7em;
+  background: var(--text-light);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.summary-item {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+
+.summary-item .value {
+  font-size: 1.4em;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.summary-item .label {
+  font-size: 0.78em;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+input[type="file"] { display: none; }
+
+@media (max-width: 768px) {
+  .model-selector { grid-template-columns: 1fr; }
+  .upload-grid { grid-template-columns: 1fr; }
+  .header { padding: 16px 20px; }
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Auditoria de Recebiveis</h1>
+  <p>Gerador de Relatorios de Auditoria Documental e Financeira</p>
+</div>
+
+<div class="container">
+
+  <!-- STEP 1: Model Selection -->
+  <div class="card">
+    <div class="section-title">
+      <span class="step-badge">1</span>
+      Selecione o Modelo de Relatorio
+    </div>
+    <div class="model-selector">
+      <div class="model-option" data-model="sem_projecao" onclick="selectModel('sem_projecao')">
+        <h3>Sem Projecao</h3>
+        <p>Modelo completo sem projecao de indices. Inclui Conciliacao e Auditoria Documental.</p>
+        <div class="tabs-list">
+          <strong>Abas geradas:</strong><br>
+          Visao Geral, Estudo de Unidades, Resumo Unidades, Recebimentos, Conciliacao, Behaviour, Distratos, Recebiveis Cedente, Aging Cedente, Recebiveis Neo, Aging Neo, Inadimplencia, Base Full, Espelho de Vendas, Auditoria Documental, Cessao de Credito
+        </div>
+      </div>
+      <div class="model-option" data-model="previa" onclick="selectModel('previa')">
+        <h3>Para Previa</h3>
+        <p>Modelo simplificado para analise previa. Recebiveis e Aging unificados (sem separacao Cedente/Neo).</p>
+        <div class="tabs-list">
+          <strong>Abas geradas:</strong><br>
+          Visao Geral, Estudo de Unidades, Resumo Unidades, Relacao de Contratos, Recebimentos, Behaviour, Distratos, Recebiveis, Aging, Inadimplencia, Base Full, Espelho de Vendas
+        </div>
+      </div>
+      <div class="model-option" data-model="com_projecao" onclick="selectModel('com_projecao')">
+        <h3>Com Projecao</h3>
+        <p>Modelo completo com projecao de indices (IGP-M, INCC). Inclui Aging Projetado Cedente e Neo.</p>
+        <div class="tabs-list">
+          <strong>Abas geradas:</strong><br>
+          Visao Geral, Estudo de Unidades, Resumo Unidades, Conciliacao, Recebimentos, Behaviour, Distratos, Recebiveis Cedente, Aging Cedente, Aging Cedente Projetado, Recebiveis Neo, Aging Neo, Aging Neo Projetado, Inadimplencia, Base Full, Espelho de Vendas, Auditoria Documental, Cessao de Credito
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Configuration -->
+  <div class="card">
+    <div class="section-title">
+      <span class="step-badge">2</span>
+      Configuracao da Operacao
+    </div>
+    <div class="config-section">
+      <div class="config-field">
+        <label>Nome do CRI / Operacao</label>
+        <input type="text" id="cfg-nome-cri" placeholder="Ex: CRI Série 123">
+      </div>
+      <div class="config-field">
+        <label>Empreendimento</label>
+        <input type="text" id="cfg-empreendimento" placeholder="Ex: Residencial Neo">
+      </div>
+      <div class="config-field">
+        <label>Data Base</label>
+        <input type="date" id="cfg-data-base">
+      </div>
+      <div class="config-field">
+        <label>Taxa da Operacao (% a.a.)</label>
+        <input type="number" id="cfg-taxa-op" step="0.01" value="14.90" placeholder="14.90">
+      </div>
+      <div class="config-field">
+        <label>Tipo de Taxa</label>
+        <select id="cfg-tipo-taxa">
+          <option value="CDI">CDI</option>
+          <option value="CDI+">CDI + Spread</option>
+          <option value="IPCA+">IPCA + Spread</option>
+          <option value="PREFIXADO">Prefixado</option>
+        </select>
+      </div>
+      <div class="config-field">
+        <label>Prazo Final da Operacao</label>
+        <input type="date" id="cfg-fim-op">
+      </div>
+      <div class="config-field" id="cfg-projecao-wrapper" style="display:none;">
+        <label>Indice de Projecao</label>
+        <select id="cfg-indice-projecao">
+          <option value="IGPM">IGP-M</option>
+          <option value="INCC">INCC-DI</option>
+          <option value="IPCA">IPCA</option>
+        </select>
+      </div>
+      <div class="config-field" id="cfg-taxa-projecao-wrapper" style="display:none;">
+        <label>Taxa de Projecao do Indice (% a.a.)</label>
+        <input type="number" id="cfg-taxa-projecao" step="0.01" value="3.90" placeholder="3.90">
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: File Uploads -->
+  <div class="card">
+    <div class="section-title">
+      <span class="step-badge">3</span>
+      Importar Dados (Upload de Arquivos)
+    </div>
+    <p style="font-size:0.85em; color:var(--text-light); margin-bottom:16px;">
+      Aceita arquivos .xlsx, .xls, .csv. Cada arquivo deve conter os dados conforme o modelo indicado.
+    </p>
+    <div class="upload-grid">
+
+      <div class="upload-item" id="upload-contratos">
+        <button class="btn-remove" onclick="removeFile('contratos')" title="Remover">&times;</button>
+        <div class="label">Relacao de Contratos <span class="required-badge">Obrigatorio</span></div>
+        <div class="description">Relacao de contratos a serem auditados. Colunas esperadas: ID_Contrato, Unidade, Cliente, Empreendimento, Data da Venda, Valor de Venda, Status, Saldo Devedor.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-contratos').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-contratos" accept=".xlsx,.xls,.csv" onchange="handleUpload('contratos', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-parcelas">
+        <button class="btn-remove" onclick="removeFile('parcelas')" title="Remover">&times;</button>
+        <div class="label">Parcelas em Aberto <span class="required-badge">Obrigatorio</span></div>
+        <div class="description">Parcelas vencidas e a vencer de todos os contratos cedidos. Colunas: ID_Contrato, Unidade, Parcela, Tipo, Dt Vencimento, Valor Original, Valor Corrigido, Status.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-parcelas').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-parcelas" accept=".xlsx,.xls,.csv" onchange="handleUpload('parcelas', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-recebimentos">
+        <button class="btn-remove" onclick="removeFile('recebimentos')" title="Remover">&times;</button>
+        <div class="label">Recebimentos Historico <span class="required-badge">Obrigatorio</span></div>
+        <div class="description">Recebimentos historicos incluindo quitados e detalhamento de permuta/dacao. Colunas: ID_Contrato, Parcela, Dt Venc., Data Recebimento, Valor Original, Valor Pago, Tipo.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-recebimentos').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-recebimentos" accept=".xlsx,.xls,.csv" onchange="handleUpload('recebimentos', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-cadastrais">
+        <button class="btn-remove" onclick="removeFile('cadastrais')" title="Remover">&times;</button>
+        <div class="label">Dados Cadastrais <span class="required-badge">Obrigatorio</span></div>
+        <div class="description">Dados cadastrais dos clientes. Colunas: ID_Contrato, Cliente, CPF/CNPJ, Estado Civil, Endereco, UF, Municipio, CEP.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-cadastrais').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-cadastrais" accept=".xlsx,.xls,.csv" onchange="handleUpload('cadastrais', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-unidades">
+        <button class="btn-remove" onclick="removeFile('unidades')" title="Remover">&times;</button>
+        <div class="label">Relacao de Unidades <span class="required-badge">Obrigatorio</span></div>
+        <div class="description">Relacao de unidades contendo status atual. Colunas: ID_Contrato, Unidade, Empreendimento, Area (m2), Valor de Venda, Status, Data Contrato.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-unidades').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-unidades" accept=".xlsx,.xls,.csv" onchange="handleUpload('unidades', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-distratos">
+        <button class="btn-remove" onclick="removeFile('distratos')" title="Remover">&times;</button>
+        <div class="label">Historico de Distratos <span class="optional-badge">Opcional</span></div>
+        <div class="description">Historico de distratos do empreendimento. Colunas: ID_Contrato, Unidade, Cliente, Data da Venda, Data do Distrato, Valor de Venda, Valor Pago.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-distratos').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-distratos" accept=".xlsx,.xls,.csv" onchange="handleUpload('distratos', this)">
+        <div class="file-info"></div>
+      </div>
+
+      <div class="upload-item" id="upload-extrato">
+        <button class="btn-remove" onclick="removeFile('extrato')" title="Remover">&times;</button>
+        <div class="label">Extrato <span class="optional-badge">Condicional</span></div>
+        <div class="description">Extrato dos ultimos 3 meses com francesinhas referentes as entradas do periodo. Colunas: Data, Descricao, Valor. Necessario para modelos com Conciliacao.</div>
+        <button class="btn-upload" onclick="document.getElementById('file-extrato').click()">
+          <span>&#128194;</span> Selecionar Arquivo
+        </button>
+        <input type="file" id="file-extrato" accept=".xlsx,.xls,.csv" onchange="handleUpload('extrato', this)">
+        <div class="file-info"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- STEP 4: Summary & Generate -->
+  <div class="card">
+    <div class="section-title">
+      <span class="step-badge">4</span>
+      Resumo e Geracao
+    </div>
+    <div id="summary-content">
+      <p style="color:var(--text-light); font-size:0.9em;">Selecione um modelo e importe os arquivos para ver o resumo dos dados.</p>
+    </div>
+    <div class="summary-grid" id="summary-grid" style="display:none;"></div>
+
+    <div class="actions">
+      <button class="btn-secondary" onclick="previewData()">Visualizar Dados</button>
+      <button class="btn-generate" id="btn-generate" onclick="generateReport()" disabled>Gerar Relatorio XLSX</button>
+    </div>
+
+    <div class="status-bar" id="status-bar">
+      <div class="status-text" id="status-text">Preparando...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="card preview-section" id="preview-section">
+    <div class="section-title">
+      Visualizacao dos Dados Importados
+    </div>
+    <div class="preview-tabs" id="preview-tabs"></div>
+    <div class="preview-table-wrapper">
+      <table class="preview-table" id="preview-table">
+        <thead id="preview-thead"></thead>
+        <tbody id="preview-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const state = {
+  model: null,
+  files: {},
+  data: {},
+};
+
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' visible';
+  setTimeout(() => t.classList.remove('visible'), 3500);
+}
+
+function selectModel(model) {
+  state.model = model;
+  document.querySelectorAll('.model-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.model === model);
+  });
+  const projWrappers = document.querySelectorAll('#cfg-projecao-wrapper, #cfg-taxa-projecao-wrapper');
+  projWrappers.forEach(el => el.style.display = model === 'com_projecao' ? 'block' : 'none');
+  updateSummary();
+}
+
+function handleUpload(key, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const sheetName = wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      state.data[key] = json;
+      state.files[key] = file.name;
+      const container = document.getElementById('upload-' + key);
+      container.classList.add('loaded');
+      const info = container.querySelector('.file-info');
+      info.innerHTML = '<strong>' + file.name + '</strong> <span class="row-count">(' + json.length + ' linhas, ' + (json.length > 0 ? Object.keys(json[0]).length : 0) + ' colunas)</span>';
+      showToast(file.name + ' importado com sucesso!', 'success');
+      updateSummary();
+    } catch (err) {
+      showToast('Erro ao ler o arquivo: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function removeFile(key) {
+  delete state.data[key];
+  delete state.files[key];
+  const container = document.getElementById('upload-' + key);
+  container.classList.remove('loaded');
+  container.querySelector('.file-info').innerHTML = '';
+  document.getElementById('file-' + key).value = '';
+  updateSummary();
+}
+
+function updateSummary() {
+  const grid = document.getElementById('summary-grid');
+  const content = document.getElementById('summary-content');
+  const btn = document.getElementById('btn-generate');
+  const required = ['contratos', 'parcelas', 'recebimentos', 'cadastrais', 'unidades'];
+  const loaded = required.filter(k => state.data[k]);
+  const hasModel = !!state.model;
+
+  if (!hasModel || loaded.length === 0) {
+    grid.style.display = 'none';
+    content.innerHTML = '<p style="color:var(--text-light); font-size:0.9em;">Selecione um modelo e importe os arquivos para ver o resumo dos dados.</p>';
+    btn.disabled = true;
+    return;
+  }
+
+  let totalContratos = state.data.contratos ? state.data.contratos.length : 0;
+  let totalParcelas = state.data.parcelas ? state.data.parcelas.length : 0;
+  let totalRecebimentos = state.data.recebimentos ? state.data.recebimentos.length : 0;
+  let totalUnidades = state.data.unidades ? state.data.unidades.length : 0;
+  let totalDistratos = state.data.distratos ? state.data.distratos.length : 0;
+
+  grid.style.display = 'grid';
+  grid.innerHTML = `
+    <div class="summary-item"><div class="value">${totalContratos}</div><div class="label">Contratos</div></div>
+    <div class="summary-item"><div class="value">${totalParcelas}</div><div class="label">Parcelas</div></div>
+    <div class="summary-item"><div class="value">${totalRecebimentos}</div><div class="label">Recebimentos</div></div>
+    <div class="summary-item"><div class="value">${totalUnidades}</div><div class="label">Unidades</div></div>
+    <div class="summary-item"><div class="value">${totalDistratos}</div><div class="label">Distratos</div></div>
+    <div class="summary-item"><div class="value">${loaded.length}/${required.length}</div><div class="label">Arquivos Carregados</div></div>
+  `;
+
+  const missing = required.filter(k => !state.data[k]);
+  if (missing.length > 0) {
+    const names = { contratos: 'Relacao de Contratos', parcelas: 'Parcelas em Aberto', recebimentos: 'Recebimentos Historico', cadastrais: 'Dados Cadastrais', unidades: 'Relacao de Unidades' };
+    content.innerHTML = '<p style="color:var(--danger); font-size:0.85em;">Faltam: ' + missing.map(k => names[k]).join(', ') + '</p>';
+    btn.disabled = true;
+  } else {
+    content.innerHTML = '<p style="color:var(--success); font-size:0.85em;">Todos os arquivos obrigatorios carregados. Pronto para gerar o relatorio.</p>';
+    btn.disabled = false;
+  }
+
+  if (state.model !== 'previa' && !state.data.extrato) {
+    content.innerHTML += '<p style="color:var(--accent); font-size:0.82em; margin-top:4px;">Aviso: O arquivo de Extrato e recomendado para a aba de Conciliacao neste modelo.</p>';
+  }
+}
+
+function previewData() {
+  const keys = Object.keys(state.data);
+  if (keys.length === 0) {
+    showToast('Importe pelo menos um arquivo para visualizar.', 'error');
+    return;
+  }
+
+  const section = document.getElementById('preview-section');
+  section.classList.add('visible');
+  const tabsContainer = document.getElementById('preview-tabs');
+  const names = {
+    contratos: 'Contratos', parcelas: 'Parcelas', recebimentos: 'Recebimentos',
+    cadastrais: 'Cadastrais', unidades: 'Unidades', distratos: 'Distratos', extrato: 'Extrato'
+  };
+
+  tabsContainer.innerHTML = '';
+  keys.forEach((k, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'preview-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = names[k] || k;
+    btn.onclick = () => showPreviewTab(k, btn);
+    tabsContainer.appendChild(btn);
+  });
+
+  showPreviewTab(keys[0], tabsContainer.firstChild);
+  section.scrollIntoView({ behavior: 'smooth' });
+}
+
+function showPreviewTab(key, btn) {
+  document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+
+  const data = state.data[key];
+  if (!data || data.length === 0) return;
+
+  const thead = document.getElementById('preview-thead');
+  const tbody = document.getElementById('preview-tbody');
+  const cols = Object.keys(data[0]);
+
+  thead.innerHTML = '<tr>' + cols.map(c => '<th>' + escapeHtml(String(c)) + '</th>').join('') + '</tr>';
+  const maxRows = Math.min(data.length, 100);
+  tbody.innerHTML = '';
+  for (let i = 0; i < maxRows; i++) {
+    const row = data[i];
+    const tr = document.createElement('tr');
+    tr.innerHTML = cols.map(c => '<td>' + escapeHtml(formatCell(row[c])) + '</td>').join('');
+    tbody.appendChild(tr);
+  }
+  if (data.length > 100) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="' + cols.length + '" style="text-align:center; color:var(--text-light); font-style:italic;">... e mais ' + (data.length - 100) + ' linhas</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+function formatCell(val) {
+  if (val === null || val === undefined) return '';
+  if (val instanceof Date) {
+    return val.toLocaleDateString('pt-BR');
+  }
+  return String(val);
+}
+
+function setProgress(pct, text) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('status-text').textContent = text;
+}
+
+function generateReport() {
+  if (!state.model) { showToast('Selecione um modelo primeiro.', 'error'); return; }
+
+  const bar = document.getElementById('status-bar');
+  bar.classList.add('visible');
+  setProgress(5, 'Iniciando geracao do relatorio...');
+
+  setTimeout(() => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const cfg = getConfig();
+
+      setProgress(10, 'Gerando aba Visao Geral...');
+      buildVisaoGeral(wb, cfg);
+
+      setProgress(20, 'Gerando aba Estudo de Unidades...');
+      buildEstudoUnidades(wb, cfg);
+
+      setProgress(25, 'Gerando aba Resumo Unidades...');
+      buildResumoUnidades(wb, cfg);
+
+      if (state.model === 'previa') {
+        setProgress(28, 'Gerando aba Relacao de Contratos...');
+        buildRelacaoContratos(wb, cfg);
+      }
+
+      if (state.model !== 'previa') {
+        setProgress(30, 'Gerando aba Conciliacao...');
+        buildConciliacao(wb, cfg);
+      }
+
+      setProgress(35, 'Gerando aba Recebimentos...');
+      buildRecebimentos(wb, cfg);
+
+      setProgress(45, 'Gerando aba Behaviour...');
+      buildBehaviour(wb, cfg);
+
+      setProgress(50, 'Gerando aba Distratos...');
+      buildDistratos(wb, cfg);
+
+      setProgress(55, 'Gerando abas de Recebiveis...');
+      buildRecebiveis(wb, cfg);
+
+      setProgress(65, 'Gerando abas de Aging...');
+      buildAging(wb, cfg);
+
+      setProgress(75, 'Gerando aba Inadimplencia...');
+      buildInadimplencia(wb, cfg);
+
+      setProgress(80, 'Gerando aba Base Full...');
+      buildBaseFull(wb, cfg);
+
+      setProgress(85, 'Gerando aba Espelho de Vendas...');
+      buildEspelhoVendas(wb, cfg);
+
+      if (state.model !== 'previa') {
+        setProgress(90, 'Gerando aba Auditoria Documental...');
+        buildAuditoriaDocumental(wb, cfg);
+
+        setProgress(93, 'Gerando aba Cessao de Credito...');
+        buildCessaoCredito(wb, cfg);
+      }
+
+      setProgress(98, 'Finalizando arquivo...');
+
+      const modelNames = {
+        sem_projecao: 'Sem_Projecao',
+        previa: 'Previa',
+        com_projecao: 'Com_Projecao'
+      };
+      const fileName = 'Auditoria_Recebiveis_' + modelNames[state.model] + '_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+      XLSX.writeFile(wb, fileName);
+
+      setProgress(100, 'Relatorio gerado com sucesso!');
+      showToast('Arquivo ' + fileName + ' gerado e baixado!', 'success');
+
+      setTimeout(() => { bar.classList.remove('visible'); }, 3000);
+    } catch (err) {
+      setProgress(0, 'Erro: ' + err.message);
+      showToast('Erro ao gerar relatorio: ' + err.message, 'error');
+      console.error(err);
+    }
+  }, 200);
+}
+
+function getConfig() {
+  return {
+    nomeCri: document.getElementById('cfg-nome-cri').value || 'CRI',
+    empreendimento: document.getElementById('cfg-empreendimento').value || 'Empreendimento',
+    dataBase: document.getElementById('cfg-data-base').value ? new Date(document.getElementById('cfg-data-base').value) : new Date(),
+    taxaOp: parseFloat(document.getElementById('cfg-taxa-op').value) / 100 || 0.149,
+    tipoTaxa: document.getElementById('cfg-tipo-taxa').value || 'CDI',
+    fimOp: document.getElementById('cfg-fim-op').value ? new Date(document.getElementById('cfg-fim-op').value) : null,
+    indiceProjecao: document.getElementById('cfg-indice-projecao').value || 'IGPM',
+    taxaProjecao: parseFloat(document.getElementById('cfg-taxa-projecao').value) / 100 || 0.039,
+    model: state.model,
+  };
+}
+
+function findCol(row, patterns) {
+  if (!row) return null;
+  const keys = Object.keys(row);
+  for (const p of patterns) {
+    const pl = p.toLowerCase();
+    for (const k of keys) {
+      if (k.toLowerCase().includes(pl)) return k;
+    }
+  }
+  return null;
+}
+
+function getVal(row, patterns, def) {
+  const col = findCol(row, patterns);
+  return col ? row[col] : (def !== undefined ? def : '');
+}
+
+function toNum(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  if (typeof v === 'number') return v;
+  const s = String(v).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+  return parseFloat(s) || 0;
+}
+
+function toDate(v) {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof v === 'number') {
+    const d = new Date((v - 25569) * 86400 * 1000);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function daysBetween(d1, d2) {
+  if (!d1 || !d2) return 0;
+  return Math.floor((d2 - d1) / (86400000));
+}
+
+function agingCategory(days) {
+  if (days <= 0) return 'Em dia';
+  if (days <= 30) return '1 a 30 dias';
+  if (days <= 60) return '31 a 60 dias';
+  if (days <= 90) return '61 a 90 dias';
+  if (days <= 120) return '91 a 120 dias';
+  if (days <= 150) return '121 a 150 dias';
+  if (days <= 180) return '151 a 180 dias';
+  return 'Acima de 180 dias';
+}
+
+function groupBy(arr, keyFn) {
+  const map = {};
+  arr.forEach(item => {
+    const k = keyFn(item);
+    if (!map[k]) map[k] = [];
+    map[k].push(item);
+  });
+  return map;
+}
+
+function sumBy(arr, fn) {
+  return arr.reduce((s, item) => s + (fn(item) || 0), 0);
+}
+
+function addSheet(wb, name, aoa) {
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31));
+}
+
+function buildVisaoGeral(wb, cfg) {
+  const contratos = state.data.contratos || [];
+  const parcelas = state.data.parcelas || [];
+
+  const totalSD = sumBy(parcelas, r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original', 'vp'])));
+  const totalParcelas = parcelas.length;
+
+  let parcelaMensal = 0, parcelaAnual = 0, parcelaChaves = 0, parcelaEntrada = 0;
+  let sdMensal = 0, sdAnual = 0, sdChaves = 0, sdEntrada = 0;
+
+  parcelas.forEach(p => {
+    const tipo = String(getVal(p, ['tipo', 'tipo de parcela', 'tipo parcela'], 'Mensal')).toLowerCase();
+    const val = toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original', 'vp']));
+    if (tipo.includes('anual') || tipo === 'at') { parcelaAnual++; sdAnual += val; }
+    else if (tipo.includes('chave') || tipo.includes('entrada') || tipo === 'pm') { parcelaChaves++; sdChaves += val; }
+    else { parcelaMensal++; sdMensal += val; }
+  });
+
+  const taxaLabel = cfg.tipoTaxa + ' ' + (cfg.taxaOp * 100).toFixed(2) + '% a.a)';
+
+  const rows = [
+    [],
+    ['', 'Auditoria Documental e Financeira dos Recebiveis do ' + cfg.nomeCri + ' - Data base: ' + (cfg.dataBase ? cfg.dataBase.toLocaleDateString('pt-BR') : '')],
+  ];
+
+  if (state.model === 'previa') {
+    rows.push(['', '', '', '', 'Info. Cedente', '', '', '', '# Contratos', 'SD Nominal']);
+    rows.push(['', '1.', 'Saldo Devedor VP Taxa Operacao (' + taxaLabel, '', totalSD, '', '5.', 'Resumo Status Auditoria Financeira', contratos.length, totalSD]);
+  } else {
+    rows.push(['', '', '', 'Info. Auditada', 'Info. Cedente', '', '', '', 'Info. Neo', 'Info. Cedente']);
+    rows.push(['', '1.', 'Saldo Devedor VP Taxa Indicativa (' + taxaLabel, totalSD, totalSD, '', '2.', 'Saldo Devedor da Carteira Valor Nominal', totalSD, totalSD]);
+  }
+
+  rows.push(['', '', 'Elegivel', totalSD, totalSD]);
+  rows.push(['', '', 'Inelegivel', 0, 0]);
+  rows.push([]);
+  rows.push(['', '', 'Por Prazo da Operacao', totalSD, totalSD]);
+  rows.push(['', '', 'Operacao', totalSD, totalSD]);
+  rows.push(['', '', 'Cauda', 0, 0]);
+  rows.push([]);
+  rows.push(['', '', '', '# Parcelas', 'Saldo Devedor']);
+  rows.push(['', '', 'Por tipo de parcela', totalParcelas, totalSD]);
+  rows.push(['', '', 'Mensal', parcelaMensal, sdMensal]);
+  rows.push(['', '', 'Anual', parcelaAnual, sdAnual]);
+  rows.push(['', '', 'Chaves/Entrada', parcelaChaves, sdChaves]);
+
+  if (state.model === 'com_projecao') {
+    rows[3] = ['', '1.', 'Saldo Devedor VP Taxa Operacao (' + taxaLabel, totalSD, totalSD, '', '2.', 'Saldo Devedor VP Taxa Operacao (' + taxaLabel + ' - PROJETADO', totalSD, totalSD];
+  }
+
+  addSheet(wb, 'Visao Geral', rows);
+}
+
+function buildEstudoUnidades(wb, cfg) {
+  const contratos = state.data.contratos || [];
+  const parcelas = state.data.parcelas || [];
+  const unidades = state.data.unidades || [];
+  const recebimentos = state.data.recebimentos || [];
+
+  const totalFaturado = sumBy(contratos, r => toNum(getVal(r, ['valor de venda', 'valor venda', 'valor contrato'])));
+  const totalSD = sumBy(parcelas, r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])));
+  const totalRecebido = sumBy(recebimentos, r => toNum(getVal(r, ['valor pago', 'valor recebido'])));
+  const nContratos = contratos.length;
+  const totalUnidades = unidades.length || nContratos;
+
+  let disponivel = 0, vendidaComSaldo = 0, quitada = 0, permuta = 0;
+  unidades.forEach(u => {
+    const st = String(getVal(u, ['status'], '')).toLowerCase();
+    if (st.includes('disponivel') || st.includes('disponível')) disponivel++;
+    else if (st.includes('quitada')) quitada++;
+    else if (st.includes('permuta') || st.includes('bloqueado')) permuta++;
+    else vendidaComSaldo++;
+  });
+
+  const rows = [
+    ['DADOS DA CARTEIRA', '', '', '1. DADOS DOS RECEBIVEIS VENCIDOS E ADIANTADOS', '', '', '', '', '', 'CURVA DE VENDAS'],
+    ['', '', '', '', '# parcelas', 'volume', '%/parcelas', '%/volume'],
+    ['INFORMACOES DOS RECEBIVEIS'],
+    ['Empreendimento', cfg.empreendimento],
+    ['Faturado + Saldo VF', totalFaturado + totalSD],
+    ['Saldo Devedor VF', totalSD],
+    ['Saldo Devedor a VP', totalSD],
+    ['Taxa Operacao', cfg.taxaOp],
+    ['Numero de contratos', nContratos],
+    ['Concentracao maxima', nContratos > 0 ? 1 : 0],
+    ['Data base', cfg.dataBase],
+    [],
+    ['TOTAL DE LOTES DO EMPREENDIMENTO', totalUnidades],
+    ['Disponivel', disponivel],
+    ['Vendida (Com Saldo)', vendidaComSaldo],
+    ['Quitada', quitada],
+    ['Bloqueado/ Permuta', permuta],
+    ['Total', totalUnidades],
+  ];
+
+  addSheet(wb, 'Estudo de Unidades', rows);
+}
+
+function buildResumoUnidades(wb, cfg) {
+  const contratos = state.data.contratos || [];
+  const parcelas = state.data.parcelas || [];
+  const cadastrais = state.data.cadastrais || [];
+
+  const parcelasByContrato = groupBy(parcelas, p => getVal(p, ['id_contrato', 'id contrato', 'contrato']));
+  const cadastroMap = {};
+  cadastrais.forEach(c => {
+    cadastroMap[getVal(c, ['id_contrato', 'id contrato', 'contrato'])] = c;
+  });
+
+  const headerBase = ['', 'ID_Contrato', 'Unidade', 'Empreendimento', 'Cliente', 'Data do contrato', 'Valor de Venda', ''];
+
+  let header;
+  if (state.model === 'previa') {
+    header = [...headerBase, 'Total A vencer', 'Total A vencer Taxa Operacao', 'Qtde Parcelas A vencer', 'Total Pago', 'Dif. Valor Venda e Saldo %', '', 'Status Finalizador', 'Elegibilidade', 'Dias de Atraso', 'Observacao'];
+  } else if (state.model === 'com_projecao') {
+    header = [...headerBase, 'Total A vencer', 'Total A vencer - PROJETADO', 'Total A vencer Taxa Contratual', 'Total a vencer Taxa Operacao', 'Total a vencer Taxa Operacao - PROJETADO', 'Qtde Parcelas A vencer', '', 'Total A vencer', 'Total A vencer - PROJETADO', 'Total A vencer Taxa Contratual', 'Total A vencer Taxa Operacao', 'Total a vencer Taxa Operacao - PROJETADO', 'Qtde Parcelas A vencer', 'Dif. Parcelas', 'Dif. Valor %', 'Total Pago', 'Dif. Valor Venda e Saldo %', '', 'Status Finalizador', 'Elegibilidade', 'Dias de Atraso', 'LTV', 'Observacao'];
+  } else {
+    header = [...headerBase, 'Total A vencer', 'Total A vencer Taxa Contratual', 'Total a vencer Taxa Operacao', 'Qtde Parcelas A vencer', '', 'Total A vencer', 'Total A vencer Taxa Contratual', 'Total A vencer Taxa Operacao', 'Qtde Parcelas A vencer', 'Dif. Parcelas', 'Dif. Valor %', 'Total Pago', 'Dif. Valor de Venda x Saldo Devedor', '', 'Status Finalizador', 'Elegibilidade', 'Dias de Atraso', 'LTV', 'Observacao'];
+  }
+
+  const rows = [[], [], header];
+
+  contratos.forEach(c => {
+    const id = getVal(c, ['id_contrato', 'id contrato', 'contrato']);
+    const unidade = getVal(c, ['unidade', 'unid']);
+    const cliente = getVal(c, ['cliente', 'nome']);
+    const dataContrato = getVal(c, ['data da venda', 'data venda', 'data contrato', 'data do contrato']);
+    const valorVenda = toNum(getVal(c, ['valor de venda', 'valor venda', 'valor contrato']));
+    const saldoDev = toNum(getVal(c, ['saldo devedor', 'saldo']));
+
+    const ps = parcelasByContrato[id] || [];
+    const qtdParcelas = ps.length;
+    const totalAVencer = sumBy(ps, p => toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original'])));
+    const totalPago = toNum(getVal(c, ['total recebido', 'valor recebido', 'total pago']));
+
+    const row = ['', id, unidade, cfg.empreendimento, cliente, dataContrato, valorVenda, '', totalAVencer, totalAVencer, totalAVencer, qtdParcelas, '', totalAVencer, totalAVencer, totalAVencer, qtdParcelas, 0, 0, totalPago, valorVenda > 0 ? -((valorVenda - saldoDev) / valorVenda) : 0, '', '', 'Elegivel', 0, 0, ''];
+
+    rows.push(row);
+  });
+
+  addSheet(wb, 'Resumo Unidades', rows);
+}
+
+function buildRelacaoContratos(wb, cfg) {
+  const contratos = state.data.contratos || [];
+  const header = ['', 'ID_Contrato', 'Unidade', 'Cliente', 'Empreendimento', 'Data da Venda', 'Valor de Venda', 'Status', 'Saldo Devedor', 'Total Recebido'];
+  const rows = [header];
+
+  contratos.forEach(c => {
+    rows.push([
+      '',
+      getVal(c, ['id_contrato', 'id contrato', 'contrato']),
+      getVal(c, ['unidade', 'unid']),
+      getVal(c, ['cliente', 'nome']),
+      cfg.empreendimento,
+      getVal(c, ['data da venda', 'data venda', 'data contrato']),
+      toNum(getVal(c, ['valor de venda', 'valor venda', 'valor contrato'])),
+      getVal(c, ['status'], 'Vendida(Com Saldo)'),
+      toNum(getVal(c, ['saldo devedor', 'saldo'])),
+      toNum(getVal(c, ['total recebido', 'valor recebido', 'total pago'])),
+    ]);
+  });
+
+  addSheet(wb, 'Relacao de contratos', rows);
+}
+
+function buildConciliacao(wb, cfg) {
+  const extrato = state.data.extrato || [];
+  const header = ['Data', 'Descricao', 'Valor (R$)', 'Valor', '', 'Data', 'Extrato', 'Recebimentos', 'Diferenca', '', '', 'Extrato', 'Recebimentos', 'Diferenca'];
+  const rows = [header];
+
+  let totalExtrato = 0;
+  extrato.forEach(e => {
+    const data = getVal(e, ['data', 'dt', 'data mov']);
+    const desc = getVal(e, ['descricao', 'historico', 'desc']);
+    const valor = toNum(getVal(e, ['valor', 'saldo', 'valor (r$)']));
+    totalExtrato += valor;
+    rows.push([data, desc, valor, valor]);
+  });
+
+  if (rows.length === 1) {
+    rows.push(['', '', '', '', '', '', 0, 0, 0, '', 'Total', 0, 0, 0]);
+  } else {
+    rows[1][10] = 'Total';
+    rows[1][11] = totalExtrato;
+    rows[1][12] = 0;
+    rows[1][13] = totalExtrato;
+  }
+
+  addSheet(wb, 'Conciliacao', rows);
+}
+
+function buildRecebimentos(wb, cfg) {
+  const recebimentos = state.data.recebimentos || [];
+  const totalOriginal = sumBy(recebimentos, r => toNum(getVal(r, ['valor original', 'valor'])));
+  const totalPago = sumBy(recebimentos, r => toNum(getVal(r, ['valor pago', 'valor recebido'])));
+
+  const rows = [
+    ['', '', '', '', '', '', '', '', '', '', '', totalOriginal, totalPago],
+    ['', 'ID_Contrato', 'Unidades', 'Cliente', 'Empreendimento', 'Parcela', 'Dt Venc.', 'Data do recebimento', 'Dt. Ref Venc.', 'Dt. Ref. Receb.', 'Recebimento nos ultimos 12 meses?', 'Valor Original', 'Valor pago', 'Status Receb.', 'Dias Atraso', 'Categoria do Atraso', 'Dias Antecipados', 'Categoria da Antecipacao', 'Tipo de recebimentos', 'Conciliacao'],
+  ];
+
+  recebimentos.forEach(r => {
+    const dtVenc = toDate(getVal(r, ['data vencimento', 'dt venc', 'dt vencimento', 'vencimento']));
+    const dtReceb = toDate(getVal(r, ['data recebimento', 'data do recebimento', 'dt recebimento', 'data pagamento']));
+    const atraso = dtVenc && dtReceb ? daysBetween(dtVenc, dtReceb) : 0;
+    const valorOrig = toNum(getVal(r, ['valor original', 'valor']));
+    const valorPago = toNum(getVal(r, ['valor pago', 'valor recebido']));
+
+    let status = 'Em dia';
+    let diasAtraso = '';
+    let catAtraso = '';
+    let diasAntecipado = '';
+    let catAntecipacao = '';
+
+    if (atraso > 0) {
+      status = 'Atrasado';
+      diasAtraso = atraso;
+      catAtraso = agingCategory(atraso);
+    } else if (atraso < 0) {
+      status = 'Antecipado';
+      diasAntecipado = Math.abs(atraso);
+      catAntecipacao = agingCategory(Math.abs(atraso));
+    }
+
+    const is12m = dtReceb && cfg.dataBase ? daysBetween(dtReceb, cfg.dataBase) <= 365 : false;
+
+    rows.push([
+      '',
+      getVal(r, ['id_contrato', 'id contrato', 'contrato']),
+      getVal(r, ['unidade', 'unid']),
+      getVal(r, ['cliente', 'nome']),
+      cfg.empreendimento,
+      getVal(r, ['parcela', 'num parcela']),
+      getVal(r, ['data vencimento', 'dt venc', 'dt vencimento', 'vencimento']),
+      getVal(r, ['data recebimento', 'data do recebimento', 'dt recebimento', 'data pagamento']),
+      getVal(r, ['data vencimento', 'dt venc']),
+      getVal(r, ['data recebimento', 'data do recebimento']),
+      is12m ? 'Sim' : 'Nao',
+      valorOrig,
+      valorPago,
+      status,
+      diasAtraso,
+      catAtraso,
+      diasAntecipado,
+      catAntecipacao,
+      getVal(r, ['tipo', 'tipo de recebimento', 'tipo recebimento'], 'Cobranca'),
+      '-',
+    ]);
+  });
+
+  addSheet(wb, 'Recebimentos', rows);
+}
+
+function buildBehaviour(wb, cfg) {
+  const recebimentos = state.data.recebimentos || [];
+  const byContrato = groupBy(recebimentos, r => getVal(r, ['id_contrato', 'id contrato', 'contrato']));
+
+  const rows = [
+    [],
+    ['', 'ID_Contrato', 'Unidade', 'Cliente', 'Em dia', 'Antecipado', '1 a 30 dias', '31 a 60 dias', '61 a 90 dias', '91 a 120 dias', '121 a 150 dias', '151 a 180 dias', 'Acima de 180 dias', 'Total'],
+  ];
+
+  for (const [id, recs] of Object.entries(byContrato)) {
+    const counts = { 'Em dia': 0, 'Antecipado': 0, '1 a 30 dias': 0, '31 a 60 dias': 0, '61 a 90 dias': 0, '91 a 120 dias': 0, '121 a 150 dias': 0, '151 a 180 dias': 0, 'Acima de 180 dias': 0 };
+
+    recs.forEach(r => {
+      const dtVenc = toDate(getVal(r, ['data vencimento', 'dt venc', 'dt vencimento']));
+      const dtReceb = toDate(getVal(r, ['data recebimento', 'data do recebimento', 'dt recebimento']));
+      const atraso = dtVenc && dtReceb ? daysBetween(dtVenc, dtReceb) : 0;
+      if (atraso < 0) counts['Antecipado']++;
+      else if (atraso === 0) counts['Em dia']++;
+      else {
+        const cat = agingCategory(atraso);
+        if (counts[cat] !== undefined) counts[cat]++;
+      }
+    });
+
+    rows.push([
+      '',
+      id,
+      getVal(recs[0], ['unidade', 'unid']),
+      getVal(recs[0], ['cliente', 'nome']),
+      counts['Em dia'],
+      counts['Antecipado'],
+      counts['1 a 30 dias'],
+      counts['31 a 60 dias'],
+      counts['61 a 90 dias'],
+      counts['91 a 120 dias'],
+      counts['121 a 150 dias'],
+      counts['151 a 180 dias'],
+      counts['Acima de 180 dias'],
+      recs.length,
+    ]);
+  }
+
+  addSheet(wb, 'Behaviour', rows);
+}
+
+function buildDistratos(wb, cfg) {
+  const distratos = state.data.distratos || [];
+  const header = ['ID_Contrato', 'Unidade', 'Cliente', 'Empreendimento', 'Data da Venda', 'Data do Distrato', 'Meses do contrato', 'Valor de Venda', 'Valor Pago'];
+  const rows = [header];
+
+  distratos.forEach(d => {
+    const dtVenda = toDate(getVal(d, ['data da venda', 'data venda', 'data contrato']));
+    const dtDistrato = toDate(getVal(d, ['data do distrato', 'data distrato']));
+    const meses = dtVenda && dtDistrato ? Math.round(daysBetween(dtVenda, dtDistrato) / 30) : '';
+
+    rows.push([
+      getVal(d, ['id_contrato', 'id contrato', 'contrato']),
+      getVal(d, ['unidade', 'unid']),
+      getVal(d, ['cliente', 'nome']),
+      cfg.empreendimento,
+      getVal(d, ['data da venda', 'data venda', 'data contrato']),
+      getVal(d, ['data do distrato', 'data distrato']),
+      meses,
+      toNum(getVal(d, ['valor de venda', 'valor venda', 'valor contrato'])),
+      toNum(getVal(d, ['valor pago', 'valor recebido'])),
+    ]);
+  });
+
+  addSheet(wb, 'Distratos', rows);
+}
+
+function buildRecebiveis(wb, cfg) {
+  const parcelas = state.data.parcelas || [];
+
+  const baseHeader = ['', 'ID_Contrato', 'Unidade', 'Cliente', 'Empreendimento', 'Parcela', 'Tipo de parcela', 'Dt Vencim', 'Dt. Ref', 'Valor Principal', 'Valor Corrigido', 'VP. Op.', 'VP. Contratual', 'Status', 'Elegibilidade', 'Prazo Op.'];
+  const projHeader = [...baseHeader.slice(0, 13), 'Indice Utilizado', 'Taxa Pos Habite-se', 'Entrega do Habite-se', 'Ano Venc.', 'Indice de Correcao PRE-Chaves', 'Indice de Correcao Pos-Chaves', 'Meses Pos-Chave', 'Meses Pre-Chave', 'Correcao Pre-Chaves', 'Valor Corrigido - Proj.', 'VP. Op. - Proj.', 'Status', 'Elegibilidade', 'Prazo Op.'];
+
+  function buildRecSheet(headerRow) {
+    const totalSD = sumBy(parcelas, p => toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original'])));
+    const summaryRow = new Array(headerRow.length).fill('');
+    summaryRow[9] = totalSD;
+    summaryRow[10] = totalSD;
+    summaryRow[11] = totalSD;
+    summaryRow[12] = totalSD;
+
+    const metaRows = [
+      [...new Array(headerRow.length - 2).fill(''), 'Data base', cfg.dataBase],
+      [...new Array(headerRow.length - 2).fill(''), 'Taxa Op', cfg.taxaOp],
+    ];
+    if (cfg.fimOp) {
+      metaRows.push([...new Array(headerRow.length - 2).fill(''), 'Fim Op.', cfg.fimOp]);
+    }
+
+    const rows = [summaryRow, headerRow];
+
+    parcelas.forEach(p => {
+      const val = toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original', 'valor principal']));
+      const dtVenc = toDate(getVal(p, ['data vencimento', 'dt venc', 'dt vencimento', 'vencimento']));
+      const diasAtraso = dtVenc ? daysBetween(dtVenc, cfg.dataBase) : 0;
+      const status = diasAtraso > 0 ? 'Inadimplente' : 'A vencer';
+
+      const row = [
+        '',
+        getVal(p, ['id_contrato', 'id contrato', 'contrato']),
+        getVal(p, ['unidade', 'unid']),
+        getVal(p, ['cliente', 'nome']),
+        cfg.empreendimento,
+        getVal(p, ['parcela', 'num parcela', 'numero']),
+        getVal(p, ['tipo', 'tipo de parcela', 'tipo parcela'], 'Mensal'),
+        getVal(p, ['data vencimento', 'dt venc', 'dt vencimento', 'vencimento']),
+        dtVenc,
+        val,
+        val,
+        val,
+        val,
+        status,
+        'Elegivel',
+        'Operacao',
+      ];
+
+      if (state.model === 'com_projecao') {
+        row.splice(13, 0, '', '', '', '', '', '', '', '', val, val);
+      }
+
+      rows.push(row);
+    });
+
+    metaRows.forEach(mr => rows.push(mr));
+    return rows;
+  }
+
+  if (state.model === 'previa') {
+    addSheet(wb, 'Recebiveis', buildRecSheet(baseHeader));
+  } else {
+    const header = state.model === 'com_projecao' ? projHeader : baseHeader;
+    addSheet(wb, 'Recebiveis_Cedente', buildRecSheet(header));
+    addSheet(wb, 'Recebiveis_Neo', buildRecSheet(header));
+  }
+}
+
+function buildAging(wb, cfg) {
+  const parcelas = state.data.parcelas || [];
+  const byContrato = groupBy(parcelas, p => getVal(p, ['id_contrato', 'id contrato', 'contrato']));
+
+  const months = [];
+  const startDate = new Date(cfg.dataBase);
+  startDate.setDate(1);
+  for (let i = 0; i < 40; i++) {
+    const d = new Date(startDate);
+    d.setMonth(d.getMonth() + i);
+    months.push(d);
+  }
+
+  function buildAgingSheet(projected) {
+    const headerRow = ['', 'ID_Contrato', 'Unidade', 'Cliente', ...months.map(m => m), 'Total Geral', 'Inadimplencia', 'Total VP Op.'];
+    if (state.model !== 'sem_projecao' || projected) {
+      headerRow.push('Parcelas em atraso', 'Total Recebido', '% INAD/FATURADO');
+    }
+
+    const rows = [[], [], [], [], [], [], [], [], headerRow];
+
+    for (const [id, ps] of Object.entries(byContrato)) {
+      const row = ['', id, getVal(ps[0], ['unidade', 'unid']), getVal(ps[0], ['cliente', 'nome'])];
+      let totalGeral = 0;
+      let inadimplencia = 0;
+
+      months.forEach(m => {
+        let monthTotal = 0;
+        ps.forEach(p => {
+          const dtVenc = toDate(getVal(p, ['data vencimento', 'dt venc', 'dt vencimento']));
+          if (dtVenc && dtVenc.getMonth() === m.getMonth() && dtVenc.getFullYear() === m.getFullYear()) {
+            let val = toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original']));
+            if (projected) {
+              const yearsAhead = (m - cfg.dataBase) / (365.25 * 86400000);
+              val *= Math.pow(1 + cfg.taxaProjecao, Math.max(0, yearsAhead));
+            }
+            monthTotal += val;
+          }
+        });
+        row.push(monthTotal);
+        totalGeral += monthTotal;
+      });
+
+      ps.forEach(p => {
+        const dtVenc = toDate(getVal(p, ['data vencimento', 'dt venc', 'dt vencimento']));
+        if (dtVenc && dtVenc < cfg.dataBase) {
+          inadimplencia += toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original']));
+        }
+      });
+
+      const totalVP = sumBy(ps, p => toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original'])));
+      row.push(totalGeral, inadimplencia, totalVP);
+      rows.push(row);
+    }
+
+    return rows;
+  }
+
+  if (state.model === 'previa') {
+    addSheet(wb, 'Aging', buildAgingSheet(false));
+  } else {
+    addSheet(wb, 'Aging_Cedente', buildAgingSheet(false));
+    addSheet(wb, 'Aging_Neo', buildAgingSheet(false));
+    if (state.model === 'com_projecao') {
+      addSheet(wb, 'Aging_Cedente_Projetado', buildAgingSheet(true));
+      addSheet(wb, 'Aging_Neo_Projetado', buildAgingSheet(true));
+    }
+  }
+}
+
+function buildInadimplencia(wb, cfg) {
+  const parcelas = state.data.parcelas || [];
+  const inadimplentes = [];
+
+  parcelas.forEach(p => {
+    const dtVenc = toDate(getVal(p, ['data vencimento', 'dt venc', 'dt vencimento']));
+    if (dtVenc && dtVenc < cfg.dataBase) {
+      const dias = daysBetween(dtVenc, cfg.dataBase);
+      inadimplentes.push({ ...p, diasAtraso: dias, categoria: agingCategory(dias), dtVenc });
+    }
+  });
+
+  const totalSD = sumBy(parcelas, p => toNum(getVal(p, ['saldo', 'valor corrigido', 'valor original'])));
+  const cats = ['1 a 30 dias', '31 a 60 dias', '61 a 90 dias', '91 a 120 dias', '121 a 150 dias', '151 a 180 dias', 'Acima de 180 dias'];
+  const byCat = groupBy(inadimplentes, i => i.categoria);
+
+  const rows = [
+    [],
+    ['', '', '', '', '', '', '', '', 'Periodo de Atraso', 'Contratos', 'Parcelas', 'Total em Atraso'],
+    ['', '', '', '', '', 'Data Base', cfg.dataBase, '', '1 a 30 dias', (byCat['1 a 30 dias'] || []).length, (byCat['1 a 30 dias'] || []).length, sumBy(byCat['1 a 30 dias'] || [], r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])))],
+    ['', '', '', '', '', 'Saldo devedor da Carteira:', totalSD, '', '31 a 60 dias', (byCat['31 a 60 dias'] || []).length, (byCat['31 a 60 dias'] || []).length, sumBy(byCat['31 a 60 dias'] || [], r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])))],
+  ];
+
+  cats.slice(2).forEach(cat => {
+    const items = byCat[cat] || [];
+    rows.push(['', '', '', '', '', '', '', '', cat, items.length, items.length, sumBy(items, r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])))]);
+  });
+
+  const totalInad = sumBy(inadimplentes, r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])));
+  rows.push(['', '', '', '', '', '', '', '', 'Total', inadimplentes.length, inadimplentes.length, totalInad]);
+  rows.push([]);
+  rows.push([]);
+  rows.push(['', 'ID_Contrato', 'Unidade', 'Empreendimento', 'Cliente', 'Atraso desde', 'Dias de Atraso', 'Periodo de atraso', 'Parcelas em aberto', 'Elegibilidade', 'Valor em Atraso', 'Saldo A Vencer', 'SD total', 'Participacao no Saldo Devedor Total']);
+
+  const byContratoInad = groupBy(inadimplentes, i => getVal(i, ['id_contrato', 'id contrato', 'contrato']));
+  for (const [id, items] of Object.entries(byContratoInad)) {
+    const totalAtraso = sumBy(items, r => toNum(getVal(r, ['saldo', 'valor corrigido', 'valor original'])));
+    const maxDias = Math.max(...items.map(i => i.diasAtraso));
+    rows.push([
+      '',
+      id,
+      getVal(items[0], ['unidade', 'unid']),
+      cfg.empreendimento,
+      getVal(items[0], ['cliente', 'nome']),
+      items[0].dtVenc,
+      maxDias,
+      agingCategory(maxDias),
+      items.length,
+      'Elegivel',
+      totalAtraso,
+      0,
+      totalAtraso,
+      totalSD > 0 ? totalAtraso / totalSD : 0,
+    ]);
+  }
+
+  addSheet(wb, 'Inadimplencia', rows);
+}
+
+function buildBaseFull(wb, cfg) {
+  const recebimentos = state.data.recebimentos || [];
+  const header = ['', 'ID_Contrato', 'Unidade', 'Cliente', 'Empreendimento', 'Dt Vencim', 'Dt. Receb.', 'Valor Reajustado', 'Valor Recebido'];
+  if (state.model === 'com_projecao') {
+    header.splice(4, 1);
+  }
+
+  const rows = [header];
+
+  recebimentos.forEach(r => {
+    const row = [
+      '',
+      getVal(r, ['id_contrato', 'id contrato', 'contrato']),
+      getVal(r, ['unidade', 'unid']),
+      getVal(r, ['cliente', 'nome']),
+    ];
+    if (state.model !== 'com_projecao') {
+      row.push(cfg.empreendimento);
+    }
+    row.push(
+      getVal(r, ['data vencimento', 'dt venc', 'dt vencimento', 'vencimento']),
+      getVal(r, ['data recebimento', 'data do recebimento', 'dt recebimento']),
+      toNum(getVal(r, ['valor original', 'valor'])),
+      toNum(getVal(r, ['valor pago', 'valor recebido'])),
+    );
+    rows.push(row);
+  });
+
+  addSheet(wb, 'Base_Full', rows);
+}
+
+function buildEspelhoVendas(wb, cfg) {
+  const unidades = state.data.unidades || [];
+
+  let disponivel = 0, vendidaComSaldo = 0, quitada = 0, permuta = 0, outros = 0;
+  unidades.forEach(u => {
+    const st = String(getVal(u, ['status'], '')).toLowerCase();
+    if (st.includes('disponivel') || st.includes('disponível')) disponivel++;
+    else if (st.includes('quitada')) quitada++;
+    else if (st.includes('permuta') || st.includes('bloqueado')) permuta++;
+    else if (st.includes('vendida') || st.includes('com saldo')) vendidaComSaldo++;
+    else outros++;
+  });
+  const total = unidades.length;
+
+  const rows = [
+    [],
+    ['', '', '', '', '', '', '', '', 'Cliente', 'Status', '%'],
+    ['', '', '', '', '', '', '', '', 'Disponivel', disponivel, total > 0 ? disponivel / total : 0],
+    ['', '', '', '', '', '', '', '', 'Vendida (Com Saldo)', vendidaComSaldo, total > 0 ? vendidaComSaldo / total : 0],
+    ['', '', '', '', '', '', '', '', 'Quitada', quitada, total > 0 ? quitada / total : 0],
+    ['', '', '', '', '', '', '', '', 'Permuta', permuta, total > 0 ? permuta / total : 0],
+    ['', '', '', '', '', '', '', '', 'Total', total, 1],
+    [], [], [],
+    ['', '', '', '', '', 'Posicao de estoque'],
+    [], [],
+    ['', 'ID_Contrato', 'Unidade', 'Cliente', 'Empreendimento', 'Area (m2)', 'Valor de venda', 'Status', 'Data do Contrato', 'Saldo Devedor', 'Valor Recebido'],
+  ];
+
+  unidades.forEach(u => {
+    rows.push([
+      '',
+      getVal(u, ['id_contrato', 'id contrato', 'contrato']),
+      getVal(u, ['unidade', 'unid']),
+      getVal(u, ['cliente', 'nome']),
+      cfg.empreendimento,
+      toNum(getVal(u, ['area', 'area (m2)', 'area privativa', 'm2', 'area_m2'])),
+      toNum(getVal(u, ['valor de venda', 'valor venda', 'valor contrato'])),
+      getVal(u, ['status'], 'Vendida (Com Saldo)'),
+      getVal(u, ['data do contrato', 'data contrato', 'data da venda', 'data venda']),
+      toNum(getVal(u, ['saldo devedor', 'saldo'])),
+      toNum(getVal(u, ['valor recebido', 'total recebido', 'total pago'])),
+    ]);
+  });
+
+  addSheet(wb, 'Espelho de vendas', rows);
+}
+
+function buildAuditoriaDocumental(wb, cfg) {
+  const cadastrais = state.data.cadastrais || [];
+  const contratos = state.data.contratos || [];
+
+  const contratoMap = {};
+  contratos.forEach(c => {
+    contratoMap[getVal(c, ['id_contrato', 'id contrato', 'contrato'])] = c;
+  });
+
+  const header = ['', 'ID_Contrato', 'Unidade/Fracao', 'Empreendimento', 'Cliente', 'CPF / CNPJ', 'Estado Civil Comprador', 'Regime de Bens', 'Nome Comprador 2', 'CPF Comprador 2', 'Area Privativa (m2)', 'Assinatura do contrato', 'Valor do Contrato', 'UF do cliente', 'Municipio do cliente', 'Logradouro do cliente', 'Numero do endereco', 'Complemento', 'Bairro do cliente', 'CEP do cliente', 'Contrato na pasta?', 'Nome do Contrato', 'Nome do Vendedor', 'CNPJ Vendedor',
+    'Contrato com todas as Paginas?', 'Ha clausula de atualizacao e variacao de indice', 'Indice de Correcao Pre Habite-se', 'Indice de Correcao Pos Habite-se', 'Prazo do Contrato (Meses)', 'Ultimo Vencimento', 'Correcao Anual/mensal', 'Taxa de juros pre Habite-se (%)', 'Taxa de juros pos Habite-se (%)', 'Seguro Contratado', 'Juros de Mora (%)', 'Multa (%)', 'Sistema de Amortizacao',
+    'Numero da Matricula do Lote', 'Cartorio de Registro', 'Matricula do Empreendimento', 'Previsao de TVO/Entrega', 'Possui Clausula de Cessao?', 'Tem data de Assinatura?', 'Tipo de assinatura', 'Rubrica em todas as paginas?',
+    'Comprador 1 assina?', 'Conjuge 1 assina?', 'Comprador 2 assina?', 'Conjuge 2 assina?', 'Vendedor Assina?', 'Testemunha 1 assina?', 'Testemunha 2 assina?',
+    'Doc Pessoal Comprador 1?', 'Documentos Legiveis?', 'Qual documento?', 'Doc Pessoal Comprador 2?', 'Documentos Legiveis?', 'Qual documento?',
+    'Tem aditivo?', 'Aditivo assinado?', 'Data do aditivo', 'Teor do aditivo',
+    'Possui Cessao?', 'Nome do cedente', 'Cessao assinada?', 'Data da cessao', 'Data de correcao', 'OBSERVACOES', 'Responsavel', 'VP Op.'
+  ];
+
+  const rows = [[], header];
+
+  cadastrais.forEach(c => {
+    const id = getVal(c, ['id_contrato', 'id contrato', 'contrato']);
+    const contrato = contratoMap[id] || {};
+
+    rows.push([
+      '',
+      id,
+      getVal(c, ['unidade', 'unid', 'fracao']),
+      cfg.empreendimento,
+      getVal(c, ['cliente', 'nome', 'nome cliente']),
+      getVal(c, ['cpf', 'cnpj', 'cpf/cnpj', 'cpf_cnpj', 'documento']),
+      getVal(c, ['estado civil', 'estado_civil']),
+      getVal(c, ['regime de bens', 'regime_bens']),
+      getVal(c, ['comprador 2', 'nome comprador 2', 'comprador2']),
+      getVal(c, ['cpf comprador 2', 'cpf_comprador2']),
+      toNum(getVal(c, ['area', 'area privativa', 'm2', 'area_m2'])),
+      getVal(contrato, ['data da venda', 'data venda', 'data contrato']),
+      toNum(getVal(contrato, ['valor de venda', 'valor venda', 'valor contrato'])),
+      getVal(c, ['uf', 'estado']),
+      getVal(c, ['municipio', 'cidade']),
+      getVal(c, ['logradouro', 'endereco', 'rua']),
+      getVal(c, ['numero', 'num']),
+      getVal(c, ['complemento', 'compl']),
+      getVal(c, ['bairro']),
+      getVal(c, ['cep']),
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '',
+      '', '', '', '',
+      '', '', '', '', '', '',
+      '', '', '', '', '',
+      '', '',
+    ]);
+  });
+
+  addSheet(wb, 'Auditoria Documental', rows);
+}
+
+function buildCessaoCredito(wb, cfg) {
+  const rows = [
+    [],
+    ['', '', '', '', 'Cessao de Credito'],
+    [],
+  ];
+  addSheet(wb, 'Cessao de credito', rows);
+}
+
+document.getElementById('cfg-data-base').valueAsDate = new Date();
+</script>
+
+</body>
+</html>
