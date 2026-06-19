@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Neo Service - Auditoria de Recebiveis</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 /* ===== RESET & BASE ===== */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -35,13 +36,14 @@ input,select{font-family:inherit;font-size:inherit}
 .app{display:flex;margin-top:var(--header-h);flex:1}
 
 /* ===== SIDEBAR ===== */
-.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--navy2);position:fixed;top:var(--header-h);bottom:0;left:0;overflow-y:auto;z-index:90;transition:transform .3s}
+.sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#1a2332;position:fixed;top:var(--header-h);bottom:0;left:0;overflow-y:auto;z-index:90;transition:transform .3s}
 .sidebar::-webkit-scrollbar{width:4px}
 .sidebar::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px}
 .sidebar .tab-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 18px;border:none;background:none;color:#a0aec0;font-size:.82rem;text-align:left;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
 .sidebar .tab-btn:hover{background:rgba(255,255,255,.05);color:#fff}
-.sidebar .tab-btn.active{background:rgba(0,180,216,.08);color:var(--teal);border-left-color:var(--teal);font-weight:600}
+.sidebar .tab-btn.active{background:rgba(14,107,110,.15);color:var(--teal);border-left-color:var(--teal);font-weight:600}
 .sidebar .tab-btn i{width:18px;text-align:center;font-size:.9rem}
+.sidebar .sep{height:1px;background:rgba(255,255,255,.08);margin:6px 18px}
 
 /* ===== MAIN ===== */
 .main{flex:1;margin-left:var(--sidebar-w);padding:24px;overflow-x:hidden}
@@ -69,7 +71,6 @@ table.data tbody tr:nth-child(even):hover{background:#edf2f7}
 table.data .num{text-align:right;font-variant-numeric:tabular-nums}
 table.data .center{text-align:center}
 
-/* summary tables inside cards */
 table.summary{font-size:.8rem;width:100%}
 table.summary th{background:var(--accent);color:#fff;padding:6px 10px;text-align:left;font-weight:600;white-space:nowrap}
 table.summary td{padding:5px 10px;border-bottom:1px solid var(--border)}
@@ -78,17 +79,80 @@ table.summary .label{font-weight:600;color:var(--accent)}
 table.summary .sub{padding-left:20px;color:var(--text-light)}
 table.summary .total{font-weight:700;background:#edf2f7}
 
-/* stat cards */
 .stat-card{background:var(--white);border-radius:8px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;border-top:3px solid var(--teal)}
 .stat-card .value{font-size:1.4rem;font-weight:700;color:var(--accent)}
 .stat-card .label{font-size:.75rem;color:var(--text-light);margin-top:4px}
 
-/* status badges */
 .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
 .badge-ok{background:#c6f6d5;color:#22543d}
 .badge-warn{background:#fefcbf;color:#744210}
 .badge-danger{background:#fed7d7;color:#9b2c2c}
 .badge-info{background:#bee3f8;color:#2a4365}
+
+/* ===== UPLOAD AREA ===== */
+.upload-section{max-width:900px;margin:0 auto}
+.upload-header{text-align:center;margin-bottom:28px}
+.upload-header h2{font-size:1.5rem;color:var(--accent);margin-bottom:6px}
+.upload-header p{color:var(--text-light);font-size:.9rem}
+
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.upload-card{background:var(--white);border:2px dashed var(--border);border-radius:10px;padding:18px 16px;text-align:center;cursor:pointer;transition:all .25s;position:relative;overflow:hidden}
+.upload-card:hover{border-color:var(--teal);background:#f0fafa}
+.upload-card.loaded{border-color:var(--success);border-style:solid;background:#f0fff4}
+.upload-card.error{border-color:var(--danger);border-style:solid;background:#fff5f5}
+.upload-card .uc-icon{font-size:1.8rem;color:var(--teal);margin-bottom:8px}
+.upload-card.loaded .uc-icon{color:var(--success)}
+.upload-card .uc-title{font-weight:700;font-size:.9rem;color:var(--accent);margin-bottom:3px}
+.upload-card .uc-tag{display:inline-block;font-size:.65rem;font-weight:700;padding:1px 8px;border-radius:8px;margin-bottom:6px}
+.upload-card .uc-tag.required{background:#fed7d7;color:#9b2c2c}
+.upload-card .uc-tag.optional{background:#fefcbf;color:#744210}
+.upload-card .uc-tag.conditional{background:#bee3f8;color:#2a4365}
+.upload-card .uc-hint{font-size:.72rem;color:var(--text-light)}
+.upload-card .uc-file{font-size:.75rem;color:var(--success);font-weight:600;margin-top:6px;word-break:break-all}
+.upload-card .uc-stats{font-size:.7rem;color:var(--text-light);margin-top:2px}
+.upload-card .uc-remove{position:absolute;top:6px;right:8px;background:none;border:none;color:var(--danger);cursor:pointer;font-size:.9rem;opacity:0;transition:opacity .2s}
+.upload-card:hover .uc-remove{opacity:1}
+.upload-card input[type=file]{display:none}
+
+.params-card{background:var(--white);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:20px;margin-bottom:20px}
+.params-card h3{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.params-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.param-field label{display:block;font-size:.75rem;font-weight:600;color:var(--text-light);margin-bottom:3px}
+.param-field input,.param-field select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:.85rem;background:#fafbfc}
+.param-field input:focus,.param-field select:focus{outline:none;border-color:var(--teal);background:#fff}
+
+.action-bar{display:flex;gap:12px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+.btn{padding:10px 28px;border-radius:8px;font-size:.9rem;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:8px;transition:all .2s}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:#0a5558}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover:not(:disabled){background:#2f855a}
+.btn-outline{background:none;border:2px solid var(--accent);color:var(--accent)}
+.btn-outline:hover:not(:disabled){background:var(--accent);color:#fff}
+
+.progress-bar{width:100%;height:6px;background:#e2e8f0;border-radius:3px;margin-top:12px;overflow:hidden;display:none}
+.progress-bar.active{display:block}
+.progress-bar .fill{height:100%;background:linear-gradient(90deg,var(--teal),var(--accent));border-radius:3px;transition:width .4s;width:0}
+
+.preview-summary{background:var(--white);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);padding:18px;margin-top:18px;display:none}
+.preview-summary.active{display:block}
+.preview-summary h3{font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.preview-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.preview-stat{text-align:center;padding:10px;background:#f7fafc;border-radius:6px}
+.preview-stat .pv{font-size:1.3rem;font-weight:700;color:var(--accent)}
+.preview-stat .pl{font-size:.7rem;color:var(--text-light)}
+
+.step-indicator{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:28px}
+.step{display:flex;align-items:center;gap:0}
+.step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;border:2px solid var(--border);color:var(--text-light);background:#fff;transition:all .3s}
+.step.active .step-circle{border-color:var(--accent);background:var(--accent);color:#fff}
+.step.done .step-circle{border-color:var(--success);background:var(--success);color:#fff}
+.step-label{font-size:.7rem;color:var(--text-light);margin-top:4px;text-align:center;width:80px}
+.step.active .step-label{color:var(--accent);font-weight:600}
+.step.done .step-label{color:var(--success)}
+.step-line{width:60px;height:2px;background:var(--border);margin:0 4px}
+.step.done+.step-line,.step-line.done{background:var(--success)}
 
 /* ===== FOOTER ===== */
 .footer{background:var(--navy);color:#718096;text-align:center;padding:12px;font-size:.75rem;letter-spacing:1px}
@@ -98,22 +162,22 @@ table.summary .total{font-weight:700;background:#edf2f7}
   .sidebar{transform:translateX(-100%)}
   .sidebar.open{transform:translateX(0)}
   .main{margin-left:0}
-  .grid-2{grid-template-columns:1fr}
+  .grid-2,.upload-grid,.params-grid{grid-template-columns:1fr}
   .header{padding:0 12px}
   .menu-toggle{display:block!important}
+  .preview-stats{grid-template-columns:1fr 1fr}
 }
 .menu-toggle{display:none;background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;margin-right:8px}
 
 /* ===== PRINT ===== */
 @media print{
-  .header,.sidebar,.footer,.menu-toggle,.model-select{display:none!important}
+  .header,.sidebar,.footer,.menu-toggle,.model-select,.upload-section,.action-bar{display:none!important}
   .main{margin-left:0!important;padding:0!important}
   .card{box-shadow:none;border:1px solid #ccc;break-inside:avoid}
   table.data th{background:#ddd!important;color:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   body{background:#fff}
 }
 
-/* ===== INPUT FIELDS ===== */
 .field-input{border:1px solid var(--border);border-radius:4px;padding:4px 8px;background:#fafbfc;color:var(--text);font-size:.8rem;width:100%;min-width:60px}
 .field-input:focus{outline:none;border-color:var(--teal);background:#fff}
 </style>
@@ -147,9 +211,30 @@ table.summary .total{font-weight:700;background:#edf2f7}
 <footer class="footer">Neo Service - Auditoria de Recebiveis - Confidencial</footer>
 
 <script>
-// ===== TAB DEFINITIONS =====
+// ===================================================================
+// GLOBAL STATE
+// ===================================================================
+const FILES = {
+  contratos:    {key:'contratos',    title:'Relacao de Contratos',    tag:'required',     icon:'fa-file-signature',  accept:'.xlsx,.xls,.csv', hint:'ID, Unidade, Cliente, Empreendimento, Valor, Status', data:null, name:null},
+  parcelas:     {key:'parcelas',     title:'Parcelas em Aberto',     tag:'required',     icon:'fa-list-ol',         accept:'.xlsx,.xls,.csv', hint:'Parcelas a vencer com datas e valores',               data:null, name:null},
+  recebimentos: {key:'recebimentos', title:'Recebimentos Historico', tag:'required',     icon:'fa-money-bill-wave', accept:'.xlsx,.xls,.csv', hint:'Historico de pagamentos recebidos',                   data:null, name:null},
+  cadastrais:   {key:'cadastrais',   title:'Dados Cadastrais',       tag:'required',     icon:'fa-id-card',         accept:'.xlsx,.xls,.csv', hint:'CPF, enderecos, dados do comprador',                  data:null, name:null},
+  unidades:     {key:'unidades',     title:'Relacao de Unidades',    tag:'required',     icon:'fa-building',        accept:'.xlsx,.xls,.csv', hint:'Espelho de vendas, areas, status das unidades',       data:null, name:null},
+  distratos:    {key:'distratos',    title:'Historico de Distratos', tag:'optional',     icon:'fa-file-circle-xmark',accept:'.xlsx,.xls,.csv',hint:'Contratos distratados com datas e valores',           data:null, name:null},
+  extrato:      {key:'extrato',      title:'Extrato Bancario',       tag:'conditional',  icon:'fa-university',      accept:'.xlsx,.xls,.csv', hint:'Necessario para modelos com Conciliacao',             data:null, name:null}
+};
+
+let currentModel = 'sem';
+let currentTab = 'upload';
+let auditData = null;
+
+// ===================================================================
+// TAB DEFINITIONS
+// ===================================================================
 const TABS = {
   sem: [
+    {id:'upload',label:'Upload de Arquivos',icon:'fa-cloud-arrow-up'},
+    {id:'sep1'},
     {id:'visao',label:'Visao Geral',icon:'fa-chart-pie'},
     {id:'estudo',label:'Estudo de Unidades',icon:'fa-building'},
     {id:'resumo',label:'Resumo Unidades',icon:'fa-list-alt'},
@@ -168,6 +253,8 @@ const TABS = {
     {id:'cessao',label:'Cessao de Credito',icon:'fa-handshake'}
   ],
   previa: [
+    {id:'upload',label:'Upload de Arquivos',icon:'fa-cloud-arrow-up'},
+    {id:'sep1'},
     {id:'visao',label:'Visao Geral',icon:'fa-chart-pie'},
     {id:'estudo',label:'Estudo de Unidades',icon:'fa-building'},
     {id:'resumo',label:'Resumo Unidades',icon:'fa-list-alt'},
@@ -182,6 +269,8 @@ const TABS = {
     {id:'espelho',label:'Espelho de Vendas',icon:'fa-store'}
   ],
   com: [
+    {id:'upload',label:'Upload de Arquivos',icon:'fa-cloud-arrow-up'},
+    {id:'sep1'},
     {id:'visao',label:'Visao Geral',icon:'fa-chart-pie'},
     {id:'estudo',label:'Estudo de Unidades',icon:'fa-building'},
     {id:'resumo',label:'Resumo Unidades',icon:'fa-list-alt'},
@@ -203,12 +292,12 @@ const TABS = {
   ]
 };
 
-let currentModel = 'sem';
-let currentTab = 'visao';
-
+// ===================================================================
+// NAVIGATION
+// ===================================================================
 function changeModel(m) {
   currentModel = m;
-  currentTab = 'visao';
+  currentTab = 'upload';
   render();
 }
 
@@ -219,23 +308,36 @@ function selectTab(id) {
 }
 
 function render() {
-  // Sidebar
   const sb = document.getElementById('sidebar');
-  sb.innerHTML = TABS[currentModel].map(t =>
-    `<button class="tab-btn${t.id===currentTab?' active':''}" data-tab="${t.id}" onclick="selectTab('${t.id}')"><i class="fas ${t.icon}"></i>${t.label}</button>`
-  ).join('');
+  sb.innerHTML = TABS[currentModel].map(t => {
+    if(t.id.startsWith('sep')) return '<div class="sep"></div>';
+    return `<button class="tab-btn${t.id===currentTab?' active':''}" data-tab="${t.id}" onclick="selectTab('${t.id}')"><i class="fas ${t.icon}"></i>${t.label}</button>`;
+  }).join('');
 
-  // Main content
   const mc = document.getElementById('mainContent');
-  mc.innerHTML = TABS[currentModel].map(t =>
+  mc.innerHTML = TABS[currentModel].filter(t=>!t.id.startsWith('sep')).map(t =>
     `<div class="tab-content${t.id===currentTab?' active':''}" id="tab-${t.id}">${generateTabContent(t.id, currentModel)}</div>`
   ).join('');
 }
 
-// ===== HELPER FUNCTIONS =====
+// ===================================================================
+// HELPERS
+// ===================================================================
 function R(v){return `R$ ${v||'0,00'}`}
 function P(v){return `${v||'0,00'}%`}
 function D(v){return v||'dd/mm/aaaa'}
+function fmtR(n){if(n==null||isNaN(n))return'R$ 0,00';return'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtP(n){if(n==null||isNaN(n))return'0,00%';return(Number(n)*100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'}
+function fmtN(n){if(n==null||isNaN(n))return'0';return Number(n).toLocaleString('pt-BR')}
+function fmtD(v){
+  if(!v) return'-';
+  if(typeof v==='number'){
+    const d=new Date((v-25569)*86400000);
+    return d.toLocaleDateString('pt-BR');
+  }
+  if(v instanceof Date) return v.toLocaleDateString('pt-BR');
+  return String(v);
+}
 
 function summaryRow(label, val, cls='') {
   return `<tr class="${cls}"><td class="label">${label}</td><td class="num">${val}</td></tr>`;
@@ -244,9 +346,383 @@ function summaryRowSub(label, val) {
   return `<tr><td class="sub">${label}</td><td class="num">${val}</td></tr>`;
 }
 
-// ===== CONTENT GENERATORS =====
+// ===================================================================
+// FILE UPLOAD HANDLING
+// ===================================================================
+function handleFileUpload(key, inputEl) {
+  const file = inputEl.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let data;
+      if(file.name.endsWith('.csv')) {
+        const text = e.target.result;
+        const wb = XLSX.read(text, {type:'string'});
+        data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+      } else {
+        const ab = e.target.result;
+        const wb = XLSX.read(ab, {type:'array'});
+        data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+      }
+      FILES[key].data = data;
+      FILES[key].name = file.name;
+      updateUploadCards();
+    } catch(err) {
+      FILES[key].data = null;
+      FILES[key].name = null;
+      const card = document.getElementById('uc-'+key);
+      if(card){card.classList.remove('loaded');card.classList.add('error');}
+      alert('Erro ao ler arquivo: '+err.message);
+    }
+  };
+  if(file.name.endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function removeFile(key, ev) {
+  ev.stopPropagation();
+  FILES[key].data = null;
+  FILES[key].name = null;
+  const inp = document.querySelector(`#uc-${key} input[type=file]`);
+  if(inp) inp.value='';
+  updateUploadCards();
+}
+
+function updateUploadCards() {
+  Object.values(FILES).forEach(f => {
+    const card = document.getElementById('uc-'+f.key);
+    if(!card) return;
+    card.classList.remove('loaded','error');
+    const fileInfo = card.querySelector('.uc-file');
+    const statsInfo = card.querySelector('.uc-stats');
+    if(f.data) {
+      card.classList.add('loaded');
+      fileInfo.textContent = f.name;
+      statsInfo.textContent = f.data.length + ' registros encontrados';
+    } else {
+      fileInfo.textContent = '';
+      statsInfo.textContent = '';
+    }
+  });
+  updateStepIndicator();
+  updateActionButtons();
+}
+
+function updateStepIndicator() {
+  const reqFiles = ['contratos','parcelas','recebimentos','cadastrais','unidades'];
+  const reqLoaded = reqFiles.filter(k => FILES[k].data !== null).length;
+  const allReqDone = reqLoaded === reqFiles.length;
+  const needExtrato = (currentModel==='sem'||currentModel==='com');
+  const extratoOk = !needExtrato || FILES.extrato.data !== null;
+
+  const s1 = document.getElementById('step-1');
+  const s2 = document.getElementById('step-2');
+  const s3 = document.getElementById('step-3');
+  if(!s1) return;
+
+  s1.className = 'step active';
+  s2.className = 'step';
+  s3.className = 'step';
+
+  if(allReqDone) {
+    s1.className = 'step done';
+    s2.className = 'step active';
+  }
+  if(auditData) {
+    s2.className = 'step done';
+    s3.className = 'step active';
+  }
+}
+
+function updateActionButtons() {
+  const reqFiles = ['contratos','parcelas','recebimentos','cadastrais','unidades'];
+  const allReqDone = reqFiles.every(k => FILES[k].data !== null);
+  const btnProcess = document.getElementById('btnProcessar');
+  const btnExport = document.getElementById('btnExportar');
+  if(btnProcess) btnProcess.disabled = !allReqDone;
+  if(btnExport) btnExport.disabled = !auditData;
+}
+
+// ===================================================================
+// DATA PROCESSING ENGINE
+// ===================================================================
+function processarDados() {
+  const bar = document.querySelector('.progress-bar');
+  const fill = bar.querySelector('.fill');
+  bar.classList.add('active');
+  fill.style.width = '10%';
+
+  setTimeout(() => {
+    try {
+      const contratos = FILES.contratos.data || [];
+      const parcelas = FILES.parcelas.data || [];
+      const recebimentos = FILES.recebimentos.data || [];
+      const cadastrais = FILES.cadastrais.data || [];
+      const unidades = FILES.unidades.data || [];
+      const distratos = FILES.distratos.data || [];
+      const extrato = FILES.extrato.data || [];
+
+      fill.style.width = '30%';
+
+      const params = {
+        dataBase: document.getElementById('paramDataBase')?.value || '',
+        taxaOp: parseFloat((document.getElementById('paramTaxaOp')?.value||'0').replace(',','.'))/100 || 0.149,
+        prazoOp: parseInt(document.getElementById('paramPrazoOp')?.value||'120') || 120,
+        inicioOp: document.getElementById('paramInicioOp')?.value || '',
+        cdi: document.getElementById('paramCDI')?.value || 'CDI 14,90% a.a'
+      };
+
+      fill.style.width = '50%';
+
+      // Build lookup maps
+      const contratoMap = {};
+      contratos.forEach(c => {
+        const id = c.ID_Contrato || c.id_contrato || c.Id || c.id || Object.values(c)[0];
+        contratoMap[id] = c;
+      });
+
+      // Calculate totals
+      let totalSDNominal = 0, totalSDVP = 0, totalElegivel = 0, totalInelegivel = 0;
+      let parcelasPorTipo = {Mensal:0,Anual:0,Semestral:0,Unica:0,Entrada:0,Financiamento:0,Permuta:0,Trimestral:0};
+      let sdPorTipo = {Mensal:0,Anual:0,Semestral:0,Unica:0,Entrada:0,Financiamento:0,Permuta:0,Trimestral:0};
+      let totalParcelas = 0;
+
+      parcelas.forEach(p => {
+        const val = parseFloat(p['Valor Corrigido']||p['Valor_Corrigido']||p.valor_corrigido||p.Valor||p.valor||0);
+        const vpOp = parseFloat(p['VP. Op.']||p['VP_Op']||p.vp_op||val);
+        const status = String(p.Status||p.status||p.Elegibilidade||p.elegibilidade||'').toLowerCase();
+        const tipo = p['Tipo de Parcela']||p['Tipo_Parcela']||p.tipo_parcela||p.Tipo||'Mensal';
+
+        totalSDNominal += val;
+        totalSDVP += vpOp;
+        totalParcelas++;
+
+        if(status.includes('ineleg')) totalInelegivel += vpOp;
+        else totalElegivel += vpOp;
+
+        const tk = Object.keys(parcelasPorTipo).find(k=>tipo.toLowerCase().includes(k.toLowerCase())) || 'Mensal';
+        parcelasPorTipo[tk] = (parcelasPorTipo[tk]||0)+1;
+        sdPorTipo[tk] = (sdPorTipo[tk]||0)+vpOp;
+      });
+
+      fill.style.width = '70%';
+
+      // Inadimplencia
+      const inadCategories = {'1 a 30 dias':0,'31 a 60 dias':0,'61 a 90 dias':0,'91 a 120 dias':0,'121 a 150 dias':0,'151 a 180 dias':0,'Acima de 180 dias':0};
+      const inadContratos = {'1 a 30 dias':0,'31 a 60 dias':0,'61 a 90 dias':0,'91 a 120 dias':0,'121 a 150 dias':0,'151 a 180 dias':0,'Acima de 180 dias':0};
+      let totalInad = 0;
+
+      parcelas.forEach(p => {
+        const st = String(p.Status||p.status||'').toLowerCase();
+        if(!st.includes('inadimp') && !st.includes('atraso') && !st.includes('vencid')) return;
+        const dias = parseInt(p['Dias de Atraso']||p.Dias_Atraso||p.dias_atraso||p.Dias||0);
+        const val = parseFloat(p['Valor Corrigido']||p.Valor||p.valor||0);
+        let cat;
+        if(dias<=30) cat='1 a 30 dias';
+        else if(dias<=60) cat='31 a 60 dias';
+        else if(dias<=90) cat='61 a 90 dias';
+        else if(dias<=120) cat='91 a 120 dias';
+        else if(dias<=150) cat='121 a 150 dias';
+        else if(dias<=180) cat='151 a 180 dias';
+        else cat='Acima de 180 dias';
+        inadCategories[cat] += val;
+        inadContratos[cat]++;
+        totalInad += val;
+      });
+
+      // Recebimentos behavior
+      const behaviourMap = {};
+      recebimentos.forEach(r => {
+        const id = r.ID_Contrato||r.id_contrato||Object.values(r)[0];
+        if(!behaviourMap[id]) behaviourMap[id]={emDia:0,antecipado:0,'1-30':0,'31-60':0,'61-90':0,'91-120':0,'121-150':0,'151-180':0,'180+':0,total:0};
+        const st = String(r['Status Receb.']||r.Status||r.status||'').toLowerCase();
+        behaviourMap[id].total++;
+        if(st.includes('antecip')) behaviourMap[id].antecipado++;
+        else if(st.includes('em dia')||st.includes('dia')) behaviourMap[id].emDia++;
+        else {
+          const dias = parseInt(r['Dias Atraso']||r.Dias||0);
+          if(dias<=30) behaviourMap[id]['1-30']++;
+          else if(dias<=60) behaviourMap[id]['31-60']++;
+          else if(dias<=90) behaviourMap[id]['61-90']++;
+          else if(dias<=120) behaviourMap[id]['91-120']++;
+          else if(dias<=150) behaviourMap[id]['121-150']++;
+          else if(dias<=180) behaviourMap[id]['151-180']++;
+          else behaviourMap[id]['180+']++;
+        }
+      });
+
+      // Unidades status
+      const statusUnidades = {Disponivel:0,'Vendida (Com Saldo)':0,Quitada:0,Permuta:0,Bloqueado:0};
+      let totalVGV = 0;
+      unidades.forEach(u => {
+        const st = String(u.Status||u.status||'');
+        const val = parseFloat(u['Valor de venda']||u.Valor||u.valor||0);
+        if(st.includes('Dispon')) {statusUnidades.Disponivel++;}
+        else if(st.includes('Vendida')||st.includes('Com Saldo')) {statusUnidades['Vendida (Com Saldo)']++; totalVGV+=val;}
+        else if(st.includes('Quita')) {statusUnidades.Quitada++;}
+        else if(st.includes('Permuta')||st.includes('Bloq')) {statusUnidades.Permuta++;}
+      });
+
+      fill.style.width = '90%';
+
+      auditData = {
+        params,
+        contratos, parcelas, recebimentos, cadastrais, unidades, distratos, extrato,
+        totals: {totalSDNominal, totalSDVP, totalElegivel, totalInelegivel, totalParcelas,
+                 parcelasPorTipo, sdPorTipo},
+        inad: {categories:inadCategories, contratos:inadContratos, total:totalInad},
+        behaviour: behaviourMap,
+        statusUnidades, totalVGV
+      };
+
+      fill.style.width = '100%';
+
+      setTimeout(() => {
+        bar.classList.remove('active');
+        fill.style.width='0';
+        updateStepIndicator();
+        updateActionButtons();
+        showPreview();
+        render();
+        selectTab('upload');
+      }, 500);
+
+    } catch(err) {
+      bar.classList.remove('active');
+      fill.querySelector('.fill').style.width='0';
+      alert('Erro no processamento: '+err.message);
+      console.error(err);
+    }
+  }, 300);
+}
+
+function showPreview() {
+  const el = document.querySelector('.preview-summary');
+  if(!el || !auditData) return;
+  el.classList.add('active');
+  const t = auditData.totals;
+  el.querySelector('.preview-stats').innerHTML = `
+    <div class="preview-stat"><div class="pv">${fmtN(auditData.contratos.length)}</div><div class="pl">Contratos</div></div>
+    <div class="preview-stat"><div class="pv">${fmtN(t.totalParcelas)}</div><div class="pl">Parcelas</div></div>
+    <div class="preview-stat"><div class="pv">${fmtR(t.totalSDVP)}</div><div class="pl">Saldo Devedor VP</div></div>
+    <div class="preview-stat"><div class="pv">${fmtR(t.totalElegivel)}</div><div class="pl">Elegivel</div></div>
+  `;
+}
+
+// ===================================================================
+// XLSX EXPORT
+// ===================================================================
+function exportarXLSX() {
+  if(!auditData) {alert('Processe os dados primeiro.');return;}
+  const wb = XLSX.utils.book_new();
+  const t = auditData.totals;
+  const ad = auditData;
+  const model = currentModel;
+
+  // 1. Visao Geral
+  const vg = [];
+  vg.push(['Auditoria Documental e Financeira dos Recebiveis - Data base: '+ad.params.dataBase]);
+  vg.push([]);
+  vg.push(['','','Info. Auditada','Info. Cedente']);
+  vg.push(['1.','Saldo Devedor VP Taxa Operacao ('+ad.params.cdi+')',fmtR(t.totalSDVP),fmtR(t.totalSDVP)]);
+  vg.push(['','Elegivel',fmtR(t.totalElegivel),fmtR(t.totalElegivel)]);
+  vg.push(['','Inelegivel',fmtR(t.totalInelegivel),fmtR(t.totalInelegivel)]);
+  vg.push([]);
+  vg.push(['','','# Parcelas','Saldo Devedor']);
+  Object.keys(t.parcelasPorTipo).forEach(tipo => {
+    if(t.parcelasPorTipo[tipo]>0||tipo==='Mensal')
+      vg.push(['',tipo,t.parcelasPorTipo[tipo],fmtR(t.sdPorTipo[tipo])]);
+  });
+  vg.push([]);
+  vg.push(['6.','Inadimplencia Por Categoria','Contratos','Valor']);
+  Object.keys(ad.inad.categories).forEach(cat => {
+    vg.push(['',cat,ad.inad.contratos[cat],fmtR(ad.inad.categories[cat])]);
+  });
+  const wsVG = XLSX.utils.aoa_to_sheet(vg);
+  XLSX.utils.book_append_sheet(wb, wsVG, 'Visao Geral');
+
+  // 2. Resumo Unidades
+  if(ad.contratos.length) {
+    const wsResumo = XLSX.utils.json_to_sheet(ad.contratos);
+    XLSX.utils.book_append_sheet(wb, wsResumo, 'Resumo Unidades');
+  }
+
+  // 3. Recebimentos
+  if(ad.recebimentos.length) {
+    const wsReceb = XLSX.utils.json_to_sheet(ad.recebimentos);
+    XLSX.utils.book_append_sheet(wb, wsReceb, 'Recebimentos');
+  }
+
+  // 4. Behaviour
+  const behRows = [['ID_Contrato','Unidade','Cliente','Em dia','Antecipado','1-30','31-60','61-90','91-120','121-150','151-180','Acima 180','Total']];
+  Object.entries(ad.behaviour).forEach(([id,b]) => {
+    const c = ad.contratos.find(x=>(x.ID_Contrato||x.id_contrato||Object.values(x)[0])===id)||{};
+    behRows.push([id,c.Unidade||c.unidade||'',c.Cliente||c.cliente||'',b.emDia,b.antecipado,b['1-30'],b['31-60'],b['61-90'],b['91-120'],b['121-150'],b['151-180'],b['180+'],b.total]);
+  });
+  const wsBeh = XLSX.utils.aoa_to_sheet(behRows);
+  XLSX.utils.book_append_sheet(wb, wsBeh, 'Behaviour');
+
+  // 5. Distratos
+  if(ad.distratos.length) {
+    const wsDist = XLSX.utils.json_to_sheet(ad.distratos);
+    XLSX.utils.book_append_sheet(wb, wsDist, 'Distratos');
+  }
+
+  // 6. Recebiveis (parcelas)
+  if(ad.parcelas.length) {
+    const wsParc = XLSX.utils.json_to_sheet(ad.parcelas);
+    XLSX.utils.book_append_sheet(wb, wsParc, model==='previa'?'Recebiveis':'Recebiveis_Neo');
+  }
+
+  // 7. Inadimplencia
+  const inadRows = [['Periodo de Atraso','Contratos','Parcelas','Total em Atraso']];
+  Object.keys(ad.inad.categories).forEach(cat => {
+    inadRows.push([cat,ad.inad.contratos[cat],ad.inad.contratos[cat],ad.inad.categories[cat]]);
+  });
+  inadRows.push(['Total',Object.values(ad.inad.contratos).reduce((a,b)=>a+b,0),Object.values(ad.inad.contratos).reduce((a,b)=>a+b,0),ad.inad.total]);
+  const wsInad = XLSX.utils.aoa_to_sheet(inadRows);
+  XLSX.utils.book_append_sheet(wb, wsInad, 'Inadimplencia');
+
+  // 8. Base Full
+  if(ad.recebimentos.length) {
+    const bfCols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Dt Vencim','Dt. Receb.','Valor Reajustado','Valor Recebido'];
+    const bfRows = [bfCols];
+    ad.recebimentos.forEach(r => {
+      bfRows.push(bfCols.map(c => r[c]||r[c.replace(/\s/g,'_')]||r[c.toLowerCase()]||''));
+    });
+    const wsBF = XLSX.utils.aoa_to_sheet(bfRows);
+    XLSX.utils.book_append_sheet(wb, wsBF, 'Base_Full');
+  }
+
+  // 9. Espelho de Vendas
+  if(ad.unidades.length) {
+    const wsEsp = XLSX.utils.json_to_sheet(ad.unidades);
+    XLSX.utils.book_append_sheet(wb, wsEsp, 'Espelho de vendas');
+  }
+
+  // 10. Conciliacao (if extrato present)
+  if(ad.extrato.length && (model==='sem'||model==='com')) {
+    const wsConc = XLSX.utils.json_to_sheet(ad.extrato);
+    XLSX.utils.book_append_sheet(wb, wsConc, 'Conciliacao');
+  }
+
+  // 11. Auditoria Documental
+  if(ad.cadastrais.length && model!=='previa') {
+    const wsAud = XLSX.utils.json_to_sheet(ad.cadastrais);
+    XLSX.utils.book_append_sheet(wb, wsAud, 'Auditoria Documental');
+  }
+
+  const modelLabel = model==='sem'?'Sem_Projecao':model==='previa'?'Previa':'Com_Projecao';
+  XLSX.writeFile(wb, `Auditoria_Recebiveis_${modelLabel}_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// ===================================================================
+// CONTENT GENERATORS
+// ===================================================================
 function generateTabContent(tabId, model) {
   switch(tabId) {
+    case 'upload': return genUploadPage(model);
     case 'visao': return genVisaoGeral(model);
     case 'estudo': return genEstudoUnidades(model);
     case 'resumo': return genResumoUnidades(model);
@@ -272,7 +748,139 @@ function generateTabContent(tabId, model) {
   }
 }
 
-// ===== VISAO GERAL =====
+// ===================================================================
+// UPLOAD PAGE
+// ===================================================================
+function genUploadPage(model) {
+  const needExtrato = (model==='sem'||model==='com');
+
+  const cards = Object.values(FILES).map(f => {
+    const isConditional = f.key==='extrato';
+    const tagLabel = f.tag==='required'?'Obrigatorio':f.tag==='optional'?'Opcional':'Condicional';
+    const tagCls = f.tag;
+    const hidden = (isConditional && !needExtrato) ? 'style="display:none"' : '';
+    const loaded = f.data ? 'loaded' : '';
+
+    return `<div class="upload-card ${loaded}" id="uc-${f.key}" onclick="document.getElementById('file-${f.key}').click()" ${hidden}>
+      <button class="uc-remove" onclick="removeFile('${f.key}',event)" title="Remover"><i class="fas fa-times"></i></button>
+      <div class="uc-icon"><i class="fas ${f.icon}"></i></div>
+      <div class="uc-title">${f.title}</div>
+      <span class="uc-tag ${tagCls}">${tagLabel}</span>
+      <div class="uc-hint">${f.hint}</div>
+      <div class="uc-file">${f.name||''}</div>
+      <div class="uc-stats">${f.data?f.data.length+' registros encontrados':''}</div>
+      <input type="file" id="file-${f.key}" accept="${f.accept}" onchange="handleFileUpload('${f.key}',this)">
+    </div>`;
+  }).join('');
+
+  const stepsDone1 = Object.values(FILES).filter(f=>f.tag==='required'&&f.data).length===5;
+
+  return `<div class="upload-section">
+    <div class="upload-header">
+      <h2><i class="fas fa-cloud-arrow-up" style="color:var(--teal)"></i> Upload de Arquivos</h2>
+      <p>Importe os arquivos de dados para gerar a auditoria completa (.xlsx, .xls, .csv)</p>
+    </div>
+
+    <!-- STEP INDICATOR -->
+    <div class="step-indicator">
+      <div class="step ${stepsDone1?'done':'active'}" id="step-1">
+        <div class="step-circle">1</div>
+        <div class="step-label">Upload</div>
+      </div>
+      <div class="step-line ${stepsDone1?'done':''}"></div>
+      <div class="step ${stepsDone1&&!auditData?'active':auditData?'done':''}" id="step-2">
+        <div class="step-circle">2</div>
+        <div class="step-label">Parametros</div>
+      </div>
+      <div class="step-line ${auditData?'done':''}"></div>
+      <div class="step ${auditData?'active':''}" id="step-3">
+        <div class="step-circle">3</div>
+        <div class="step-label">Gerar</div>
+      </div>
+    </div>
+
+    <!-- UPLOAD CARDS -->
+    <div class="upload-grid">${cards}</div>
+
+    <!-- PARAMETERS -->
+    <div class="params-card">
+      <h3><i class="fas fa-sliders" style="color:var(--teal)"></i> Parametros da Operacao</h3>
+      <div class="params-grid">
+        <div class="param-field">
+          <label>Data Base</label>
+          <input type="date" id="paramDataBase" value="${new Date().toISOString().slice(0,10)}">
+        </div>
+        <div class="param-field">
+          <label>Taxa da Operacao (% a.a.)</label>
+          <input type="text" id="paramTaxaOp" value="14,90" placeholder="14,90">
+        </div>
+        <div class="param-field">
+          <label>Prazo da Operacao (meses)</label>
+          <input type="number" id="paramPrazoOp" value="120" min="1">
+        </div>
+        <div class="param-field">
+          <label>Inicio da Operacao</label>
+          <input type="date" id="paramInicioOp">
+        </div>
+        <div class="param-field">
+          <label>Descricao da Taxa (ex: CDI 14,90% a.a)</label>
+          <input type="text" id="paramCDI" value="CDI 14,90% a.a">
+        </div>
+        <div class="param-field">
+          <label>Modelo</label>
+          <select disabled><option>${model==='sem'?'Sem Projecao':model==='previa'?'Para Previa':'Com Projecao'}</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROGRESS -->
+    <div class="progress-bar"><div class="fill"></div></div>
+
+    <!-- ACTIONS -->
+    <div class="action-bar">
+      <button class="btn btn-primary" id="btnProcessar" onclick="processarDados()" disabled>
+        <i class="fas fa-cogs"></i> Processar Dados
+      </button>
+      <button class="btn btn-success" id="btnExportar" onclick="exportarXLSX()" disabled>
+        <i class="fas fa-file-excel"></i> Exportar XLSX
+      </button>
+      <button class="btn btn-outline" onclick="if(auditData){selectTab('visao')}else{alert('Processe os dados primeiro.')}">
+        <i class="fas fa-eye"></i> Visualizar Auditoria
+      </button>
+    </div>
+
+    <!-- PREVIEW -->
+    <div class="preview-summary ${auditData?'active':''}">
+      <h3><i class="fas fa-chart-line" style="color:var(--teal)"></i> Resumo dos Dados Processados</h3>
+      <div class="preview-stats">
+        ${auditData?`
+          <div class="preview-stat"><div class="pv">${fmtN(auditData.contratos.length)}</div><div class="pl">Contratos</div></div>
+          <div class="preview-stat"><div class="pv">${fmtN(auditData.totals.totalParcelas)}</div><div class="pl">Parcelas</div></div>
+          <div class="preview-stat"><div class="pv">${fmtR(auditData.totals.totalSDVP)}</div><div class="pl">Saldo Devedor VP</div></div>
+          <div class="preview-stat"><div class="pv">${fmtR(auditData.totals.totalElegivel)}</div><div class="pl">Elegivel</div></div>
+        `:''}
+      </div>
+      <div class="table-wrap" style="max-height:250px;overflow-y:auto">
+        <table class="data"><thead><tr><th>Aba</th><th>Registros</th><th>Status</th></tr></thead><tbody>
+          ${auditData?`
+            <tr><td>Contratos</td><td class="num">${auditData.contratos.length}</td><td><span class="badge badge-ok">OK</span></td></tr>
+            <tr><td>Parcelas</td><td class="num">${auditData.parcelas.length}</td><td><span class="badge badge-ok">OK</span></td></tr>
+            <tr><td>Recebimentos</td><td class="num">${auditData.recebimentos.length}</td><td><span class="badge badge-ok">OK</span></td></tr>
+            <tr><td>Behaviour</td><td class="num">${Object.keys(auditData.behaviour).length}</td><td><span class="badge badge-ok">Calculado</span></td></tr>
+            <tr><td>Inadimplencia</td><td class="num">${Object.values(auditData.inad.contratos).reduce((a,b)=>a+b,0)}</td><td><span class="badge badge-ok">Calculado</span></td></tr>
+            <tr><td>Unidades</td><td class="num">${auditData.unidades.length}</td><td><span class="badge badge-ok">OK</span></td></tr>
+            <tr><td>Distratos</td><td class="num">${auditData.distratos.length}</td><td><span class="badge ${auditData.distratos.length?'badge-ok':'badge-warn'}">${auditData.distratos.length?'OK':'Vazio'}</span></td></tr>
+            <tr><td>Extrato</td><td class="num">${auditData.extrato.length}</td><td><span class="badge ${auditData.extrato.length?'badge-ok':'badge-warn'}">${auditData.extrato.length?'OK':'N/A'}</span></td></tr>
+          `:''}
+        </tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ===================================================================
+// VISAO GERAL - uses auditData if available
+// ===================================================================
 function genVisaoGeral(model) {
   if (model === 'sem') return genVisaoSem();
   if (model === 'previa') return genVisaoPrevia();
@@ -280,9 +888,16 @@ function genVisaoGeral(model) {
 }
 
 function saldoDevedorTable(title, num, rows, cols) {
+  const ad = auditData;
   let colHeaders = cols.map(c=>`<th>${c}</th>`).join('');
   let body = rows.map(r => {
-    let cells = cols.map(()=>`<td class="num">${R('0,00')}</td>`).join('');
+    let val = R('0,00');
+    if(ad) {
+      if(r==='Elegivel') val=fmtR(ad.totals.totalElegivel);
+      else if(r==='Inelegivel') val=fmtR(ad.totals.totalInelegivel);
+      else if(r==='Total') val=fmtR(ad.totals.totalSDVP);
+    }
+    let cells = cols.map(()=>`<td class="num">${val}</td>`).join('');
     return `<tr><td class="label">${r}</td>${cells}</tr>`;
   }).join('');
   return `<div class="card"><div class="card-header"><i class="fas fa-coins"></i>${num}. ${title}</div>
@@ -290,43 +905,50 @@ function saldoDevedorTable(title, num, rows, cols) {
 }
 
 function genVisaoSem() {
-  const parcelaRows = ['Elegivel','Inelegivel','Total'];
-  const prazoRows = ['Operacao','Cauda'];
+  const ad = auditData;
   const tipoRows = ['Mensal','Anual','Semestral','Unica'];
-  const cols2 = ['# Parcelas','Saldo Devedor'];
 
-  let s1 = `<div class="card"><div class="card-header"><i class="fas fa-coins"></i>1. Saldo Devedor VP Taxa Indicativa (CDI X% a.a)</div>
+  let tipoData = tipoRows.map(t => {
+    const qtd = ad ? (ad.totals.parcelasPorTipo[t]||0) : 0;
+    const val = ad ? fmtR(ad.totals.sdPorTipo[t]||0) : R();
+    return summaryRow(t, `${qtd} / ${val}`);
+  }).join('');
+
+  let s1 = `<div class="card"><div class="card-header"><i class="fas fa-coins"></i>1. Saldo Devedor VP Taxa Indicativa (${ad?ad.params.cdi:'CDI X% a.a'})</div>
     <div class="grid-2">
       <div><h4 style="font-size:.8rem;color:var(--accent);margin-bottom:6px">Info. Auditada / Info. Cedente</h4>
         <table class="summary"><thead><tr><th>Categoria</th><th class="num">Valor</th></tr></thead><tbody>
-        ${summaryRow('Elegivel',R())}${summaryRow('Inelegivel',R())}${summaryRow('Total',R(),'total')}
-        <tr><th colspan="2" style="background:var(--accent);color:#fff;padding:4px 10px">Por Prazo</th></tr>
-        ${summaryRow('Operacao',R())}${summaryRow('Cauda',R())}
+        ${summaryRow('Elegivel',ad?fmtR(ad.totals.totalElegivel):R())}${summaryRow('Inelegivel',ad?fmtR(ad.totals.totalInelegivel):R())}${summaryRow('Total',ad?fmtR(ad.totals.totalSDVP):R(),'total')}
         <tr><th colspan="2" style="background:var(--accent);color:#fff;padding:4px 10px">Por Tipo de Parcela</th></tr>
         <tr><td></td><td style="font-size:.7rem;color:var(--text-light)"># Parcelas / Saldo Devedor</td></tr>
-        ${tipoRows.map(t=>summaryRow(t,`0 / ${R()}`)).join('')}
+        ${tipoData}
         </tbody></table></div>
       <div><h4 style="font-size:.8rem;color:var(--accent);margin-bottom:6px">Info. Neo / Info. Cedente</h4>
         <table class="summary"><thead><tr><th>Categoria</th><th class="num">Valor</th></tr></thead><tbody>
-        ${summaryRow('Elegivel',R())}${summaryRow('Inelegivel',R())}${summaryRow('Total',R(),'total')}
-        <tr><th colspan="2" style="background:var(--accent);color:#fff;padding:4px 10px">Por Prazo</th></tr>
-        ${summaryRow('Operacao',R())}${summaryRow('Cauda',R())}
+        ${summaryRow('Elegivel',ad?fmtR(ad.totals.totalElegivel):R())}${summaryRow('Inelegivel',ad?fmtR(ad.totals.totalInelegivel):R())}${summaryRow('Total',ad?fmtR(ad.totals.totalSDVP):R(),'total')}
         <tr><th colspan="2" style="background:var(--accent);color:#fff;padding:4px 10px">Por Tipo de Parcela</th></tr>
         <tr><td></td><td style="font-size:.7rem;color:var(--text-light)"># Parcelas / Saldo Devedor</td></tr>
-        ${tipoRows.map(t=>summaryRow(t,`0 / ${R()}`)).join('')}
+        ${tipoData}
         </tbody></table></div>
     </div></div>`;
 
-  let s2 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','2',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente','Info. Neo']);
-  let s3 = saldoDevedorTable('Saldo Devedor da Carteira VP Contratual','3',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente','Info. Neo']);
+  let s2 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','2',['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente','Info. Neo']);
+  let s3 = saldoDevedorTable('Saldo Devedor da Carteira VP Contratual','3',['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente','Info. Neo']);
+
+  let inadRows = '';
+  const cats = ['1 a 30 dias','31 a 60 dias','61 a 90 dias','91 a 120 dias','121 a 150 dias','151 a 180 dias','Acima de 180 dias'];
+  const totalI = ad ? ad.inad.total : 0;
+  cats.forEach(c => {
+    const v = ad ? ad.inad.categories[c] : 0;
+    const n = ad ? ad.inad.contratos[c] : 0;
+    const pct = totalI>0 ? fmtP(v/totalI) : P();
+    inadRows += `<tr><td>${c}</td><td class="num">${n}</td><td class="num">${ad?fmtR(v):R()}</td><td class="num">${pct}</td></tr>`;
+  });
 
   let s4 = `<div class="card"><div class="card-header"><i class="fas fa-clipboard-check"></i>4. Resumo Status Auditoria Financeira</div>
     <table class="summary"><thead><tr><th>Status</th><th class="num">Qtde</th><th class="num">%</th></tr></thead><tbody>
     ${['Fluxo ok','Divergencia ate 2%','Divergencia 2-5%','Divergencia 5-10%','Divergencia >10%','Nao Auditado'].map(s=>
       `<tr><td>${s}</td><td class="num">0</td><td class="num">${P()}</td></tr>`).join('')}
-    ${summaryRow('Total','0','total')}
     </tbody></table></div>`;
 
   let s5 = `<div class="card"><div class="card-header"><i class="fas fa-file-circle-exclamation"></i>5. Pendencias Documentais</div>
@@ -337,14 +959,13 @@ function genVisaoSem() {
 
   let s6 = `<div class="card"><div class="card-header"><i class="fas fa-exclamation-triangle"></i>6. Inadimplencia Por Categoria</div>
     <table class="summary"><thead><tr><th>Periodo</th><th class="num">Contratos</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
-    ${['1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima de 180 dias'].map(p=>
-      `<tr><td>${p}</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`).join('')}
-    ${`<tr class="total"><td>Total</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`}
+    ${inadRows}
+    <tr class="total"><td>Total</td><td class="num">${ad?Object.values(ad.inad.contratos).reduce((a,b)=>a+b,0):0}</td><td class="num">${ad?fmtR(totalI):R()}</td><td class="num">100,00%</td></tr>
     </tbody></table></div>`;
 
   let s7 = `<div class="card"><div class="card-header"><i class="fas fa-receipt"></i>7. Recebimentos ultimos 12 meses</div>
-    <table class="summary"><thead><tr><th>Categoria</th><th class="num">Qtde</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
-    ${summaryRow('Em Dia',`0 / ${R()} / ${P()}`)}
+    <table class="summary"><thead><tr><th>Categoria</th><th class="num">Qtde</th><th class="num">Valor</th></tr></thead><tbody>
+    ${summaryRow('Em Dia',`0 / ${R()}`)}
     <tr><td class="label">Atrasado</td><td class="num"></td></tr>
     ${['1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima 180 dias'].map(s=>summaryRowSub(s,`0 / ${R()}`)).join('')}
     <tr><td class="label">Antecipado</td><td class="num"></td></tr>
@@ -358,9 +979,11 @@ function genVisaoSem() {
 
   let s9 = `<div class="card"><div class="card-header"><i class="fas fa-home"></i>9. Disponibilidade</div>
     <table class="summary"><thead><tr><th>Categoria</th><th class="num"># Unidades</th><th class="num">VGV</th></tr></thead><tbody>
-    ${['Disponivel','Vendida Com Saldo','Quitada','Bloqueado/Permuta'].map(s=>
-      `<tr><td>${s}</td><td class="num">0</td><td class="num">${R()}</td></tr>`).join('')}
-    ${`<tr class="total"><td>Total</td><td class="num">0</td><td class="num">${R()}</td></tr>`}
+    ${['Disponivel','Vendida (Com Saldo)','Quitada','Permuta'].map(s => {
+      const n = ad ? (ad.statusUnidades[s]||0) : 0;
+      return `<tr><td>${s}</td><td class="num">${n}</td><td class="num">${R()}</td></tr>`;
+    }).join('')}
+    <tr class="total"><td>Total</td><td class="num">${ad?Object.values(ad.statusUnidades).reduce((a,b)=>a+b,0):0}</td><td class="num">${ad?fmtR(ad.totalVGV):R()}</td></tr>
     </tbody></table></div>`;
 
   return `<h2 class="section-title"><i class="fas fa-chart-pie"></i> Visao Geral - Sem Projecao</h2>
@@ -372,23 +995,32 @@ function genVisaoSem() {
 }
 
 function genVisaoPrevia() {
-  let s1 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao (CDI X% a.a)','1',
-    ['Elegivel','Inelegivel','Total'],['Info. Cedente']);
-  let s2 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','2',
-    ['Elegivel','Inelegivel','Total'],['Info. Cedente']);
+  let s1 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao ('+((auditData&&auditData.params.cdi)||'CDI X% a.a')+')','1',['Elegivel','Inelegivel','Total'],['Info. Cedente']);
+  let s2 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','2',['Elegivel','Inelegivel','Total'],['Info. Cedente']);
 
+  let ad = auditData;
   let s3 = `<div class="card"><div class="card-header"><i class="fas fa-home"></i>3. Disponibilidade</div>
     <table class="summary"><thead><tr><th>Status</th><th class="num"># Unidades</th><th class="num">VGV</th></tr></thead><tbody>
-    ${['Disponivel','Vendida Com Saldo','Quitada','Bloqueado/Permuta','Reservado pela Empresa','Reservado CP'].map(s=>
-      `<tr><td>${s}</td><td class="num">0</td><td class="num">${R()}</td></tr>`).join('')}
-    ${`<tr class="total"><td>Total</td><td class="num">0</td><td class="num">${R()}</td></tr>`}
+    ${['Disponivel','Vendida (Com Saldo)','Quitada','Permuta','Bloqueado'].map(s => {
+      const n = ad?(ad.statusUnidades[s]||0):0;
+      return `<tr><td>${s}</td><td class="num">${n}</td><td class="num">${R()}</td></tr>`;
+    }).join('')}
+    <tr class="total"><td>Total</td><td class="num">${ad?Object.values(ad.statusUnidades).reduce((a,b)=>a+b,0):0}</td><td class="num">${ad?fmtR(ad.totalVGV):R()}</td></tr>
     </tbody></table></div>`;
 
   let s4 = `<div class="card"><div class="card-header"><i class="fas fa-comment-dots"></i>4. Consideracoes</div>
     <div style="font-size:.82rem;line-height:1.7;color:var(--text-light)">
     ${[1,2,3,4].map(i=>`<p><strong>4.${i}</strong> - <input class="field-input" style="width:80%;display:inline" value="-"></p>`).join('')}
-    <p style="margin-top:8px;font-style:italic;color:var(--danger);font-size:.75rem"><strong>Disclaimer:</strong> Esta analise preliminar esta sujeita a alteracoes apos auditoria completa.</p>
+    <p style="margin-top:8px;font-style:italic;color:var(--danger);font-size:.75rem"><strong>Disclaimer:</strong> Este relatorio preliminar apresenta as conclusoes de auditoria financeira realizadas pela empresa Neo Service. Os dados foram extraidos a partir de informacoes fornecidas pelas Interessadas.</p>
     </div></div>`;
+
+  let inadRows = '';
+  const cats = ['1 a 30 dias','31 a 60 dias','61 a 90 dias','91 a 120 dias','121 a 150 dias','151 a 180 dias','Acima de 180 dias'];
+  cats.forEach(c => {
+    const v = ad ? ad.inad.categories[c] : 0;
+    const n = ad ? ad.inad.contratos[c] : 0;
+    inadRows += `<tr><td>${c}</td><td class="num">${n}</td><td class="num">${ad?fmtR(v):R()}</td><td class="num">${P()}</td></tr>`;
+  });
 
   let s5 = `<div class="card"><div class="card-header"><i class="fas fa-clipboard-check"></i>5. Resumo Status Auditoria Financeira</div>
     <table class="summary"><thead><tr><th>Status</th><th class="num">Qtde</th><th class="num">%</th></tr></thead><tbody>
@@ -398,9 +1030,7 @@ function genVisaoPrevia() {
 
   let s6 = `<div class="card"><div class="card-header"><i class="fas fa-exclamation-triangle"></i>6. Inadimplencia Por Categoria</div>
     <table class="summary"><thead><tr><th>Periodo</th><th class="num">Contratos</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
-    ${['1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima de 180 dias'].map(p=>
-      `<tr><td>${p}</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    ${inadRows}</tbody></table></div>`;
 
   let s7 = `<div class="card"><div class="card-header"><i class="fas fa-receipt"></i>7. Recebimentos ultimos 12 meses</div>
     <table class="summary"><thead><tr><th>Categoria</th><th class="num">Valor</th></tr></thead><tbody>
@@ -419,28 +1049,30 @@ function genVisaoPrevia() {
 }
 
 function genVisaoCom() {
+  let ad = auditData;
   const tiposParcela = ['Mensal','Entrada','Semestral','Unica','Anual','Trimestral','Financiamento','Permuta'];
-
-  let s1 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao','1',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente']);
-  let s2 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao - PROJETADO','2',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente']);
-  let s3 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','3',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente']);
-  let s4 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal - PROJETADO','4',
-    ['Elegivel','Inelegivel','Total'],['Info. Auditada','Info. Cedente']);
+  let s1 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao','1',['Elegivel','Inelegivel','Total'],['Info. Neo','Info. Cedente']);
+  let s2 = saldoDevedorTable('Saldo Devedor VP Taxa Operacao - PROJETADO','2',['Elegivel','Inelegivel','Total'],['Info. Neo','Info. Cedente']);
+  let s3 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal','3',['Elegivel','Inelegivel','Total'],['Info. Neo','Info. Cedente']);
+  let s4 = saldoDevedorTable('Saldo Devedor da Carteira Valor Nominal - PROJETADO','4',['Elegivel','Inelegivel','Total'],['Info. Neo','Info. Cedente']);
 
   let s5 = `<div class="card"><div class="card-header"><i class="fas fa-coins"></i>5. Saldo Devedor VP Taxa Contratual</div>
     <table class="summary"><thead><tr><th>Tipo Parcela</th><th class="num"># Parcelas</th><th class="num">Saldo Devedor</th></tr></thead><tbody>
-    ${tiposParcela.map(t=>`<tr><td>${t}</td><td class="num">0</td><td class="num">${R()}</td></tr>`).join('')}
-    <tr class="total"><td>Total</td><td class="num">0</td><td class="num">${R()}</td></tr>
+    ${tiposParcela.map(t=>`<tr><td>${t}</td><td class="num">${ad?(ad.totals.parcelasPorTipo[t]||0):0}</td><td class="num">${ad?fmtR(ad.totals.sdPorTipo[t]||0):R()}</td></tr>`).join('')}
+    <tr class="total"><td>Total</td><td class="num">${ad?ad.totals.totalParcelas:0}</td><td class="num">${ad?fmtR(ad.totals.totalSDVP):R()}</td></tr>
     </tbody></table></div>`;
+
+  let inadRows = '';
+  const cats = ['1 a 30 dias','31 a 60 dias','61 a 90 dias','91 a 120 dias','121 a 150 dias','151 a 180 dias','Acima de 180 dias'];
+  cats.forEach(c => {
+    const v = ad ? ad.inad.categories[c] : 0;
+    const n = ad ? ad.inad.contratos[c] : 0;
+    inadRows += `<tr><td>${c}</td><td class="num">${n}</td><td class="num">${ad?fmtR(v):R()}</td><td class="num">${P()}</td></tr>`;
+  });
 
   let s6 = `<div class="card"><div class="card-header"><i class="fas fa-exclamation-triangle"></i>6. Inadimplencia Por Categoria</div>
     <table class="summary"><thead><tr><th>Periodo</th><th class="num">Contratos</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
-    ${['1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima de 180 dias'].map(p=>
-      `<tr><td>${p}</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
+    ${inadRows}</tbody></table></div>`;
 
   let s7 = `<div class="card"><div class="card-header"><i class="fas fa-receipt"></i>7. Recebimentos ultimos 12 meses</div>
     <table class="summary"><thead><tr><th>Categoria</th><th class="num">Valor</th></tr></thead><tbody>
@@ -470,246 +1102,216 @@ function genVisaoCom() {
     ${s9}`;
 }
 
-// ===== ESTUDO DE UNIDADES =====
+// ===================================================================
+// OTHER TAB GENERATORS (data-aware)
+// ===================================================================
 function genEstudoUnidades(model) {
+  const ad = auditData;
   let dadosCarteira = `<div class="card"><div class="card-header"><i class="fas fa-folder-open"></i>Dados da Carteira</div>
     <table class="summary"><tbody>
-    ${summaryRow('Empreendimento','<input class="field-input" value="-">')}
-    ${summaryRow('Faturado + Saldo VF',R())}
-    ${summaryRow('Saldo Devedor VF',R())}
-    ${summaryRow('Saldo Devedor a VP',R())}
-    ${summaryRow('Taxa Operacao',P())}
-    ${summaryRow('Numero de contratos','0')}
-    ${summaryRow('Concentracao maxima',P())}
-    ${summaryRow('Data base',D())}
-    ${summaryRow('Total lotes','0')}
-    ${summaryRow('Disponivel','0')}
-    ${summaryRow('Vendida','0')}
-    ${summaryRow('Quitada','0')}
-    ${summaryRow('Permuta','0')}
-    <tr><th colspan="2" style="background:var(--accent);color:#fff;padding:4px 10px">RECEITA</th></tr>
-    ${summaryRow('Esperado 12m',R())}
-    ${summaryRow('Realizado Media (trimestral)',R())}
+    ${summaryRow('Empreendimento',`<input class="field-input" value="${ad?'-':'-'}">`)}
+    ${summaryRow('Faturado + Saldo VF',ad?fmtR(ad.totals.totalSDNominal):R())}
+    ${summaryRow('Saldo Devedor VF',ad?fmtR(ad.totals.totalSDNominal):R())}
+    ${summaryRow('Saldo Devedor a VP',ad?fmtR(ad.totals.totalSDVP):R())}
+    ${summaryRow('Taxa Operacao',ad?fmtP(ad.params.taxaOp):P())}
+    ${summaryRow('Numero de contratos',ad?fmtN(ad.contratos.length):'0')}
+    ${summaryRow('Data base',ad?ad.params.dataBase:D())}
+    ${summaryRow('Total lotes',ad?fmtN(ad.unidades.length):'0')}
+    ${summaryRow('Disponivel',ad?fmtN(ad.statusUnidades.Disponivel||0):'0')}
+    ${summaryRow('Vendida',ad?fmtN(ad.statusUnidades['Vendida (Com Saldo)']||0):'0')}
+    ${summaryRow('Quitada',ad?fmtN(ad.statusUnidades.Quitada||0):'0')}
+    ${summaryRow('Permuta',ad?fmtN(ad.statusUnidades.Permuta||0):'0')}
     </tbody></table></div>`;
 
-  let recebiveisVencidos = `<div class="card"><div class="card-header"><i class="fas fa-calendar-check"></i>Dados dos Recebiveis Vencidos e Adiantados</div>
+  let agingInad = `<div class="card"><div class="card-header"><i class="fas fa-clock"></i>Aging da Inadimplencia Acumulada</div>
+    <table class="summary"><thead><tr><th>Periodo</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
+    ${['1 a 30 dias','31 a 60 dias','61 a 90 dias','91 a 120 dias','121 a 150 dias','151 a 180 dias','Acima de 180 dias'].map(p => {
+      const v = ad?ad.inad.categories[p]:0;
+      const pct = ad&&ad.inad.total>0?fmtP(v/ad.inad.total):P();
+      return `<tr><td>${p}</td><td class="num">${ad?fmtR(v):R()}</td><td class="num">${pct}</td></tr>`;
+    }).join('')}
+    </tbody></table></div>`;
+
+  let recebiveisVencidos = `<div class="card"><div class="card-header"><i class="fas fa-calendar-check"></i>Dados dos Recebiveis</div>
     <table class="summary"><thead><tr><th>Categoria</th><th class="num">Qtde</th><th class="num">Valor</th></tr></thead><tbody>
     ${['Vencido','Em dia','Em atraso','Pago Adiantado','Recebido total'].map(c=>
       `<tr><td>${c}</td><td class="num">0</td><td class="num">${R()}</td></tr>`).join('')}
     </tbody></table></div>`;
 
-  let agingInad = `<div class="card"><div class="card-header"><i class="fas fa-clock"></i>Aging da Inadimplencia Acumulada</div>
-    <table class="summary"><thead><tr><th>Periodo</th><th class="num">Valor</th><th class="num">%</th></tr></thead><tbody>
-    ${['Ate 30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima 181 dias'].map(p=>
-      `<tr><td>${p}</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
-
-  let segParcelas = `<div class="card"><div class="card-header"><i class="fas fa-layer-group"></i>Segmentacao por numero de parcelas inadimplentes</div>
-    <table class="summary"><thead><tr><th>Faixa</th><th class="num">Contratos</th><th class="num">%</th></tr></thead><tbody>
-    ${['0-5','6-10','11-15','16-20','21-25','26-30','31+'].map(f=>
-      `<tr><td>${f} parcelas</td><td class="num">0</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
-
-  let segPerc = `<div class="card"><div class="card-header"><i class="fas fa-percent"></i>Segmentacao por % Inadimplente</div>
-    <table class="summary"><thead><tr><th>Faixa</th><th class="num">Contratos</th><th class="num">%</th></tr></thead><tbody>
-    ${['0%','Ate 10%','10-20%','20-30%','30-40%','40-50%','50-60%','60-70%','70-80%','80-90%','90-100%','>100%'].map(f=>
-      `<tr><td>${f}</td><td class="num">0</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
-
-  let behaviour = `<div class="card"><div class="card-header"><i class="fas fa-chart-bar"></i>Behaviour de Pagamentos</div>
-    <table class="summary"><thead><tr><th>Categoria</th><th class="num">Qtde</th><th class="num">%</th></tr></thead><tbody>
-    ${['Antecipacao','Em dia','1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima 180 dias'].map(c=>
-      `<tr><td>${c}</td><td class="num">0</td><td class="num">${P()}</td></tr>`).join('')}
-    </tbody></table></div>`;
-
-  let curvaVendas = `<div class="card"><div class="card-header"><i class="fas fa-chart-line"></i>Curva de Vendas</div>
-    <div class="table-wrap"><table class="data"><thead><tr>
-    <th>Mes</th><th>Vendas</th><th>Vendas acc.</th><th>Preco m.</th><th>Preco/m2</th><th>Preco/m2 aa</th>
-    </tr></thead><tbody>
-    <tr><td>${D()}</td><td class="num">0</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>
-    <tr><td>${D()}</td><td class="num">0</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>
-    </tbody></table></div></div>`;
-
-  let historico = `<div class="card"><div class="card-header"><i class="fas fa-history"></i>Historico de Venda</div>
-    <p style="color:var(--text-light);font-size:.82rem">Grafico de historico de vendas sera inserido aqui.</p>
-    <div style="height:120px;background:linear-gradient(135deg,#edf2f7,#e2e8f0);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:.8rem">
-    [Area do Grafico]</div></div>`;
-
   return `<h2 class="section-title"><i class="fas fa-building"></i> Estudo de Unidades</h2>
-    <div class="grid-2">
-      <div>${dadosCarteira}</div>
-      <div>${recebiveisVencidos}${agingInad}</div>
-    </div>
-    <div class="grid-2">${segParcelas}${segPerc}</div>
-    <div class="grid-2">${behaviour}${curvaVendas}</div>
-    ${historico}`;
+    <div class="grid-2"><div>${dadosCarteira}</div><div>${recebiveisVencidos}${agingInad}</div></div>`;
 }
 
-// ===== RESUMO UNIDADES =====
 function genResumoUnidades(model) {
+  const ad = auditData;
   let baseCols = ['ID_Contrato','Unidade','Empreendimento','Cliente','Data Contrato','Valor Venda'];
-  let extraCols = [];
-  if (model === 'sem') {
-    extraCols = ['Total A Vencer (Ced.)','Taxa Contratual (Ced.)','Taxa Operacao (Ced.)','Qtde Parcelas (Ced.)',
-      'Total A Vencer (Neo)','Taxa Contratual (Neo)','Taxa Operacao (Neo)','Qtde Parcelas (Neo)',
-      'Dif. Parcelas','Dif. Valor %','Total Pago','Dif. Valor Venda x SD','Status Finalizador',
-      'Elegibilidade','Dias Atraso','LTV','Observacao',
-      'Fluxo ok','Diverg. ate 2%','Diverg. 2-5%','Diverg. 5-10%','Diverg. >10%'];
-  } else if (model === 'previa') {
-    extraCols = ['Total A Vencer','Taxa Contratual','Taxa Operacao','Qtde Parcelas',
-      'Total Pago','Elegibilidade','Dias Atraso','LTV','Observacao','Status'];
+  if(model==='sem') baseCols = baseCols.concat(['Total A Vencer','Taxa Operacao','Qtde Parcelas','Dif. Valor %','Total Pago','Elegibilidade','Dias Atraso','LTV','Observacao']);
+  else if(model==='previa') baseCols = baseCols.concat(['Total A Vencer','Taxa Operacao','Qtde Parcelas','Total Pago','Elegibilidade','Dias Atraso','Observacao']);
+  else baseCols = baseCols.concat(['Total A Vencer','Total A Vencer Proj.','Taxa Operacao','Qtde Parcelas','Dif. Valor %','Total Pago','Elegibilidade','Dias Atraso','LTV','Observacao']);
+
+  let rows = '';
+  if(ad && ad.contratos.length) {
+    ad.contratos.slice(0,100).forEach(c => {
+      rows += '<tr>' + baseCols.map(col => {
+        const keys = [col,col.replace(/\s/g,'_'),col.toLowerCase(),col.replace(/\s/g,'_').toLowerCase()];
+        let v = '';
+        for(let k of keys) { if(c[k]!==undefined){v=c[k];break;} }
+        if(!v) v = Object.values(c)[baseCols.indexOf(col)] || '-';
+        return `<td>${v}</td>`;
+      }).join('') + '</tr>';
+    });
   } else {
-    extraCols = ['Total A Vencer (Ced.)','Taxa Contratual (Ced.)','Taxa Operacao (Ced.)','Qtde Parcelas (Ced.)',
-      'Total A Vencer (Ced. Proj.)','VP Op. Proj. (Ced.)',
-      'Total A Vencer (Neo)','Taxa Contratual (Neo)','Taxa Operacao (Neo)','Qtde Parcelas (Neo)',
-      'Total A Vencer (Neo Proj.)','VP Op. Proj. (Neo)',
-      'Dif. Parcelas','Dif. Valor %','Total Pago','Status Finalizador','Elegibilidade','Dias Atraso','LTV','Observacao'];
+    rows = '<tr>' + baseCols.map(c => `<td>-</td>`).join('') + '</tr>';
   }
-  let allCols = baseCols.concat(extraCols);
-  let sampleVals = {
-    'ID_Contrato':'CTR-0001','Unidade':'UN-101','Empreendimento':'Empreendimento A','Cliente':'Cliente Exemplo',
-    'Data Contrato':D(),'Valor Venda':R('150.000,00')
-  };
-  let row = allCols.map(c => {
-    let v = sampleVals[c] || (c.includes('Taxa')||c.includes('%')||c.includes('LTV') ? P() :
-            c.includes('Valor')||c.includes('Vencer')||c.includes('Pago')||c.includes('VP') ? R() :
-            c.includes('Data')||c.includes('Dt') ? D() :
-            c.includes('Qtde')||c.includes('Dias')||c.includes('Parcelas') ? '0' : '-');
-    return `<td class="${c.includes('Valor')||c.includes('R$')||c.includes('Taxa')||c.includes('%')?'num':''}">${v}</td>`;
-  }).join('');
 
   return `<h2 class="section-title"><i class="fas fa-list-alt"></i> Resumo Unidades</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
-    ${allCols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
+    ${baseCols.map(c=>`<th>${c}</th>`).join('')}
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== RECEBIMENTOS =====
 function genRecebimentos(model) {
-  let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Parcela','Dt Venc.','Data Recebimento',
-    'Dt. Ref Venc.','Dt. Ref. Receb.','Receb. ult. 12m?','Valor Original','Valor Pago','Status Receb.',
-    'Dias Atraso','Categoria Atraso','Dias Antecipados','Categoria Antecipacao','Tipo de Recebimento',
-    model==='previa'?'Validador':'Conciliacao'];
+  const ad = auditData;
+  let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Parcela','Dt Venc.','Data Recebimento','Valor Original','Valor Pago','Status Receb.','Dias Atraso','Tipo Recebimento'];
 
-  let row = cols.map(c => {
-    let v = c.includes('Valor') ? R() : c.includes('Dt')||c.includes('Data') ? D() :
-            c.includes('Dias') ? '0' : c==='Parcela' ? '1/36' : c.includes('12m') ? 'Sim' : '-';
-    return `<td class="${c.includes('Valor')?'num':''}">${v}</td>`;
-  }).join('');
+  let rows = '';
+  if(ad && ad.recebimentos.length) {
+    ad.recebimentos.slice(0,200).forEach(r => {
+      rows += '<tr>' + cols.map(col => {
+        const keys = [col,col.replace(/\s/g,'_'),col.replace(/\./g,'')];
+        let v = '';
+        for(let k of keys) { if(r[k]!==undefined){v=r[k];break;} }
+        if(!v) { for(let k of Object.keys(r)) { if(k.toLowerCase().includes(col.toLowerCase().slice(0,6))){v=r[k];break;} } }
+        return `<td>${v||'-'}</td>`;
+      }).join('') + '</tr>';
+    });
+    if(ad.recebimentos.length>200) rows += `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text-light)">... e mais ${ad.recebimentos.length-200} registros</td></tr>`;
+  } else {
+    rows = '<tr>' + cols.map(()=>`<td>-</td>`).join('') + '</tr>';
+  }
 
   return `<h2 class="section-title"><i class="fas fa-money-bill-wave"></i> Recebimentos</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== CONCILIACAO =====
 function genConciliacao(model) {
-  let left = `<div class="card"><div class="card-header"><i class="fas fa-file-alt"></i>Extrato Bancario</div>
-    <div class="table-wrap"><table class="data"><thead><tr><th>Data</th><th>Descricao/Historico</th><th>Valor (R$)</th></tr></thead><tbody>
-    <tr><td>${D()}</td><td>-</td><td class="num">${R()}</td></tr>
-    <tr><td>${D()}</td><td>-</td><td class="num">${R()}</td></tr>
-    </tbody></table></div></div>`;
-
-  let right = `<div class="card"><div class="card-header"><i class="fas fa-balance-scale"></i>Conciliacao Diaria</div>
-    <div class="table-wrap"><table class="data"><thead><tr><th>Data</th><th>Extrato</th><th>Recebimentos</th><th>Diferenca</th></tr></thead><tbody>
-    <tr><td>${D()}</td><td class="num">${R()}</td><td class="num">${R()}</td><td class="num">${R()}</td></tr>
-    <tr><td>${D()}</td><td class="num">${R()}</td><td class="num">${R()}</td><td class="num">${R()}</td></tr>
-    </tbody></table></div>
-    <div style="margin-top:12px;display:flex;gap:24px;font-size:.85rem;font-weight:600">
-      <span>Total Extrato: <span style="color:var(--accent)">${R()}</span></span>
-      <span>Total Recebimentos: <span style="color:var(--accent)">${R()}</span></span>
-      <span>Total Diferenca: <span style="color:var(--teal)">${R()}</span></span>
-    </div></div>`;
+  const ad = auditData;
+  let extratoRows = '';
+  if(ad && ad.extrato.length) {
+    ad.extrato.slice(0,50).forEach(e => {
+      const vals = Object.values(e);
+      extratoRows += `<tr><td>${vals[0]||'-'}</td><td>${vals[1]||'-'}</td><td class="num">${vals[2]||'0'}</td></tr>`;
+    });
+  } else {
+    extratoRows = `<tr><td>${D()}</td><td>-</td><td class="num">${R()}</td></tr>`;
+  }
 
   return `<h2 class="section-title"><i class="fas fa-balance-scale"></i> Conciliacao</h2>
-    <div class="grid-2">${left}${right}</div>`;
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><i class="fas fa-file-alt"></i>Extrato Bancario</div>
+        <div class="table-wrap" style="max-height:400px;overflow-y:auto"><table class="data"><thead><tr><th>Data</th><th>Descricao</th><th>Valor (R$)</th></tr></thead><tbody>
+        ${extratoRows}</tbody></table></div></div>
+      <div class="card"><div class="card-header"><i class="fas fa-balance-scale"></i>Conciliacao Diaria</div>
+        <div class="table-wrap"><table class="data"><thead><tr><th>Data</th><th>Extrato</th><th>Recebimentos</th><th>Diferenca</th></tr></thead><tbody>
+        <tr><td>${D()}</td><td class="num">${R()}</td><td class="num">${R()}</td><td class="num">${R()}</td></tr>
+        </tbody></table></div></div>
+    </div>`;
 }
 
-// ===== BEHAVIOUR =====
 function genBehaviour(model) {
+  const ad = auditData;
   let cols = ['ID_Contrato','Unidade','Cliente','Em dia','Antecipado','1-30','31-60','61-90','91-120','121-150','151-180','Acima 180','Total'];
-  let row = cols.map(c => {
-    let v = ['ID_Contrato','Unidade','Cliente'].includes(c) ?
-      (c==='ID_Contrato'?'CTR-0001':c==='Unidade'?'UN-101':'Cliente Exemplo') : '0';
-    return `<td class="${!['ID_Contrato','Unidade','Cliente'].includes(c)?'num center':''}">${v}</td>`;
-  }).join('');
+
+  let rows = '';
+  if(ad && Object.keys(ad.behaviour).length) {
+    Object.entries(ad.behaviour).forEach(([id,b]) => {
+      const c = ad.contratos.find(x=>(x.ID_Contrato||x.id_contrato||Object.values(x)[0])===id)||{};
+      rows += `<tr><td>${id}</td><td>${c.Unidade||c.unidade||'-'}</td><td>${c.Cliente||c.cliente||'-'}</td>
+        <td class="num center">${b.emDia}</td><td class="num center">${b.antecipado}</td>
+        <td class="num center">${b['1-30']}</td><td class="num center">${b['31-60']}</td>
+        <td class="num center">${b['61-90']}</td><td class="num center">${b['91-120']}</td>
+        <td class="num center">${b['121-150']}</td><td class="num center">${b['151-180']}</td>
+        <td class="num center">${b['180+']}</td><td class="num center">${b.total}</td></tr>`;
+    });
+  } else {
+    rows = `<tr><td>-</td><td>-</td><td>-</td>${'<td class="num center">0</td>'.repeat(10)}</tr>`;
+  }
 
   return `<h2 class="section-title"><i class="fas fa-chart-bar"></i> Behaviour</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== DISTRATOS =====
 function genDistratos(model) {
-  let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Data Venda/Contrato','Data Distrato','Meses Contrato','Valor Venda','Valor Pago'];
-  let row = `<tr><td>CTR-0001</td><td>UN-101</td><td>Cliente Exemplo</td><td>Empreendimento A</td>
-    <td>${D()}</td><td>${D()}</td><td class="num">0</td><td class="num">${R('150.000,00')}</td><td class="num">${R()}</td></tr>`;
+  const ad = auditData;
+  let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Data Venda','Data Distrato','Meses Contrato','Valor Venda','Valor Pago'];
+  let rows = '';
+  if(ad && ad.distratos.length) {
+    ad.distratos.forEach(d => {
+      rows += '<tr>' + cols.map(c => {
+        for(let k of Object.keys(d)) { if(k.toLowerCase().includes(c.toLowerCase().slice(0,5))) return `<td>${d[k]}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
+  }
 
   return `<h2 class="section-title"><i class="fas fa-file-circle-xmark"></i> Distratos</h2>
     <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody>${row}</tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== RECEBIVEIS =====
 function genRecebiveis(tipo, model) {
+  const ad = auditData;
   let label = tipo === 'Unico' ? '' : ` - ${tipo}`;
-  let baseCols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Parcela','Tipo de Parcela',
-    'Dt Vencim','Dt. Ref','Valor Principal/Original','Valor Corrigido','VP. Op.','VP. Contratual',
-    'Status','Elegibilidade','Prazo Op.'];
+  let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Parcela','Tipo de Parcela','Dt Vencim','Valor Principal','Valor Corrigido','VP. Op.','Status','Elegibilidade','Prazo Op.'];
+  if(model==='com') cols = cols.concat(['Valor Corrigido Proj.','VP Op. Proj.']);
 
-  let extraCols = [];
-  if (model === 'com') {
-    extraCols = ['Indice Utilizado','Taxa Pos Habite-se','Entrega Habite-se','Ano Venc.',
-      'Indice Correcao PRE-Chaves','Indice Correcao POS-Chaves','Meses Pos-Chave','Meses Pre-Chave',
-      'Correcao Pre-Chaves','Valor Corrigido Proj.','VP Op. Proj.'];
+  let rows = '';
+  if(ad && ad.parcelas.length) {
+    ad.parcelas.slice(0,200).forEach(p => {
+      rows += '<tr>' + cols.map(c => {
+        for(let k of Object.keys(p)) { if(k.toLowerCase().replace(/[\s_.]/g,'').includes(c.toLowerCase().replace(/[\s_.]/g,'').slice(0,6))) return `<td>${p[k]||'-'}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
   }
-  let allCols = baseCols.concat(extraCols);
-
-  let row = allCols.map(c => {
-    let v = c.includes('Valor')||c.includes('VP') ? R() :
-            c.includes('Dt')||c.includes('Data')||c.includes('Entrega') ? D() :
-            c.includes('Taxa')||c.includes('Prazo') ? P() :
-            c==='Parcela' ? '1/36' : c==='Tipo de Parcela' ? 'Mensal' :
-            c==='Status' ? 'A Vencer' : c==='Elegibilidade' ? 'Elegivel' :
-            c.includes('Meses')||c.includes('Ano') ? '0' : '-';
-    return `<td class="${c.includes('Valor')||c.includes('VP')||c.includes('Taxa')?'num':''}">${v}</td>`;
-  }).join('');
 
   let sidePanel = `<div class="card" style="max-width:280px"><div class="card-header"><i class="fas fa-cog"></i>Parametros</div>
     <table class="summary"><tbody>
-    ${summaryRow('Data base',`<input class="field-input" value="${D()}">`)}
-    ${summaryRow('Taxa Op.',`<input class="field-input" value="${P()}">`)}
-    ${summaryRow('Data Calculo',`<input class="field-input" value="${D()}">`)}
-    ${summaryRow('Fim Op.',`<input class="field-input" value="${D()}">`)}
+    ${summaryRow('Data base',ad?ad.params.dataBase:D())}
+    ${summaryRow('Taxa Op.',ad?fmtP(ad.params.taxaOp):P())}
+    ${summaryRow('Prazo Op.',ad?ad.params.prazoOp+' meses':'120 meses')}
     </tbody></table></div>`;
 
   return `<h2 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Recebiveis${label}</h2>
     <div style="display:flex;gap:18px;align-items:flex-start">
-      <div style="flex:1"><div class="card"><div class="table-wrap"><table class="data"><thead><tr>
-        ${allCols.map(c=>`<th>${c}</th>`).join('')}
-        </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div></div>
+      <div style="flex:1"><div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
+        ${cols.map(c=>`<th>${c}</th>`).join('')}
+        </tr></thead><tbody>${rows}</tbody></table></div></div></div>
       ${sidePanel}
     </div>`;
 }
 
-// ===== AGING =====
 function genAging(tipo, projetado, model) {
   let label = tipo === 'Unico' ? '' : ` - ${tipo}`;
   let projLabel = projetado ? ' (Projetado)' : '';
   let months = ['Jan/25','Fev/25','Mar/25','Abr/25','Mai/25','Jun/25','Jul/25','Ago/25','Set/25','Out/25','Nov/25','Dez/25'];
   let baseCols = ['ID_Contrato','Unidade','Cliente'];
   let endCols = ['Total Geral','Inadimplencia','Total VP Op.'];
-  if (tipo === 'Neo' || tipo === 'Unico') {
-    endCols = endCols.concat(['Parcelas em atraso','Total Recebido','% INAD/FATURADO']);
-  }
-
+  if(tipo==='Neo'||tipo==='Unico') endCols = endCols.concat(['Parcelas em atraso','Total Recebido','% INAD/FATURADO']);
   let allCols = baseCols.concat(months).concat(endCols);
+
   let row = allCols.map(c => {
     let v = ['ID_Contrato','Unidade','Cliente'].includes(c) ?
-      (c==='ID_Contrato'?'CTR-0001':c==='Unidade'?'UN-101':'Cliente Exemplo') :
+      (c==='ID_Contrato'?'CTR-0001':c==='Unidade'?'UN-101':'Exemplo') :
       c.includes('%') ? P() : c.includes('Parcelas') ? '0' : R();
     return `<td class="${!['ID_Contrato','Unidade','Cliente'].includes(c)?'num':''}">${v}</td>`;
   }).join('');
@@ -720,125 +1322,110 @@ function genAging(tipo, projetado, model) {
     </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
 }
 
-// ===== INADIMPLENCIA =====
 function genInadimplencia(model) {
-  let summary = `<div class="card"><div class="card-header"><i class="fas fa-exclamation-triangle"></i>Resumo da Inadimplencia</div>
+  const ad = auditData;
+  const cats = ['1 a 30 dias','31 a 60 dias','61 a 90 dias','91 a 120 dias','121 a 150 dias','151 a 180 dias','Acima de 180 dias'];
+  let totalC = 0, totalP = 0, totalV = 0;
+
+  let inadRows = cats.map(c => {
+    const n = ad ? ad.inad.contratos[c] : 0;
+    const v = ad ? ad.inad.categories[c] : 0;
+    const pct = ad&&ad.inad.total>0 ? fmtP(v/ad.inad.total) : P();
+    totalC += n; totalP += n; totalV += v;
+    return `<tr><td>${c}</td><td class="num">${n}</td><td class="num">${n}</td><td class="num">${ad?fmtR(v):R()}</td><td class="num">${pct}</td></tr>`;
+  }).join('');
+
+  let summary = `<div class="card"><div class="card-header"><i class="fas fa-exclamation-triangle"></i>Posicao de Inadimplencia</div>
     <div class="grid-2">
       <div><table class="summary"><tbody>
-        ${summaryRow('Data Base',D())}
-        ${summaryRow('Saldo Devedor da Carteira',R())}
-      </tbody></table></div>
-      <div></div>
+        ${summaryRow('Data Base',ad?ad.params.dataBase:D())}
+        ${summaryRow('Saldo Devedor da Carteira',ad?fmtR(ad.totals.totalSDVP):R())}
+      </tbody></table></div><div></div>
     </div>
     <div class="table-wrap" style="margin-top:12px"><table class="data"><thead><tr>
       <th>Periodo</th><th>Contratos</th><th>Parcelas</th><th>Total em Atraso</th><th>%</th>
     </tr></thead><tbody>
-    ${['1-30 dias','31-60 dias','61-90 dias','91-120 dias','121-150 dias','151-180 dias','Acima de 180 dias'].map(p=>
-      `<tr><td>${p}</td><td class="num">0</td><td class="num">0</td><td class="num">${R()}</td><td class="num">${P()}</td></tr>`).join('')}
-    <tr class="total"><td><strong>Total</strong></td><td class="num"><strong>0</strong></td><td class="num"><strong>0</strong></td><td class="num"><strong>${R()}</strong></td><td class="num"><strong>${P()}</strong></td></tr>
+    ${inadRows}
+    <tr class="total"><td><strong>Total</strong></td><td class="num"><strong>${totalC}</strong></td><td class="num"><strong>${totalP}</strong></td><td class="num"><strong>${ad?fmtR(totalV):R()}</strong></td><td class="num"><strong>100,00%</strong></td></tr>
     </tbody></table></div></div>`;
 
-  let detailCols = ['ID_Contrato','Unidade','Empreendimento','Cliente','Atraso desde','Dias de Atraso',
-    'Periodo de Atraso','Parcelas em aberto','Elegibilidade','Valor em Atraso','Saldo A Vencer',
-    'SD Total','Participacao no SD Total'];
-  let row = detailCols.map(c => {
-    let v = c.includes('Valor')||c.includes('Saldo')||c.includes('SD') ? R() :
-            c.includes('Participacao') ? P() :
-            c.includes('Dias')||c.includes('Parcelas') ? '0' :
-            c.includes('Atraso desde') ? D() :
-            c==='Periodo de Atraso' ? '1-30 dias' :
-            c==='Elegibilidade' ? 'Elegivel' :
-            c==='ID_Contrato' ? 'CTR-0001' : c==='Unidade' ? 'UN-101' :
-            c==='Empreendimento' ? 'Empreendimento A' : c==='Cliente' ? 'Cliente Exemplo' : '-';
-    return `<td class="${c.includes('Valor')||c.includes('Saldo')||c.includes('SD')||c.includes('Participacao')?'num':''}">${v}</td>`;
-  }).join('');
-
-  return `<h2 class="section-title"><i class="fas fa-exclamation-triangle"></i> Inadimplencia</h2>
-    ${summary}
-    <div class="card"><div class="card-header"><i class="fas fa-table"></i>Detalhamento</div>
-    <div class="table-wrap"><table class="data"><thead><tr>
-    ${detailCols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
+  return `<h2 class="section-title"><i class="fas fa-exclamation-triangle"></i> Inadimplencia</h2>${summary}`;
 }
 
-// ===== BASE FULL =====
 function genBaseFull(model) {
+  const ad = auditData;
   let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Dt Vencim','Dt. Receb.','Valor Reajustado','Valor Recebido'];
-  let row = `<tr><td>CTR-0001</td><td>UN-101</td><td>Cliente Exemplo</td><td>Empreendimento A</td>
-    <td>${D()}</td><td>${D()}</td><td class="num">${R()}</td><td class="num">${R()}</td></tr>`;
-
-  return `<h2 class="section-title"><i class="fas fa-database"></i> Base Full</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
-    ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody>${row}</tbody></table></div></div>`;
-}
-
-// ===== ESPELHO DE VENDAS =====
-function genEspelhoVendas(model) {
-  let statuses = ['Disponivel','Vendida Com Saldo','Quitada','Permuta'];
-  let stats = `<div class="grid-4">${statuses.map(s=>
-    `<div class="stat-card"><div class="value">0</div><div class="label">${s}</div></div>`).join('')}</div>`;
-
-  let extraStats = '';
-  if (model === 'sem') {
-    extraStats = `<div class="grid-3" style="margin-top:12px">
-      <div class="stat-card"><div class="value">${R()}</div><div class="label">Valor Total Vendas 12m</div></div>
-      <div class="stat-card"><div class="value">0,00</div><div class="label">M2 Total</div></div>
-      <div class="stat-card"><div class="value">${R()}</div><div class="label">Media m2</div></div>
-    </div>`;
+  let rows = '';
+  if(ad && ad.recebimentos.length) {
+    ad.recebimentos.slice(0,200).forEach(r => {
+      rows += '<tr>' + cols.map(c => {
+        for(let k of Object.keys(r)) { if(k.toLowerCase().replace(/[\s_.]/g,'').includes(c.toLowerCase().replace(/[\s_.]/g,'').slice(0,5))) return `<td>${r[k]||'-'}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
   }
 
+  return `<h2 class="section-title"><i class="fas fa-database"></i> Base Full</h2>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
+    ${cols.map(c=>`<th>${c}</th>`).join('')}
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+
+function genEspelhoVendas(model) {
+  const ad = auditData;
+  let statuses = ['Disponivel','Vendida (Com Saldo)','Quitada','Permuta'];
+  let stats = `<div class="grid-4">${statuses.map(s=>
+    `<div class="stat-card"><div class="value">${ad?(ad.statusUnidades[s]||0):0}</div><div class="label">${s}</div></div>`).join('')}</div>`;
+
   let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Area (m2)','Valor de Venda','Status','Data Contrato','Saldo Devedor','Valor Recebido'];
-  let row = `<tr><td>CTR-0001</td><td>UN-101</td><td>Cliente Exemplo</td><td>Empreendimento A</td>
-    <td class="num">50,00</td><td class="num">${R('150.000,00')}</td><td><span class="badge badge-ok">Vendida</span></td>
-    <td>${D()}</td><td class="num">${R()}</td><td class="num">${R()}</td></tr>`;
+  let rows = '';
+  if(ad && ad.unidades.length) {
+    ad.unidades.slice(0,100).forEach(u => {
+      rows += '<tr>' + cols.map(c => {
+        for(let k of Object.keys(u)) { if(k.toLowerCase().replace(/[\s_.]/g,'').includes(c.toLowerCase().replace(/[\s_.]/g,'').slice(0,5))) return `<td>${u[k]||'-'}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
+  }
 
   return `<h2 class="section-title"><i class="fas fa-store"></i> Espelho de Vendas</h2>
-    <div class="card">${stats}${extraStats}</div>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
+    <div class="card">${stats}</div>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody>${row}</tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== AUDITORIA DOCUMENTAL =====
 function genAuditoriaDocumental(model) {
-  let cols = ['ID_Contrato','Unidade/Fracao','Empreendimento','Cliente','CPF/CNPJ','Estado Civil',
-    'Regime de Bens','Nome Comprador 2','CPF Comprador 2','Nome Comprador 3','CPF Comprador 3',
-    'Area Privativa','Assinatura Contrato','Valor Contrato','% Corretagem','Valor Comissao',
-    'UF','Municipio','Logradouro','Numero','Complemento','Bairro','CEP',
-    'Contrato na pasta?','Nome do Contrato','Nome Vendedor','CNPJ Vendedor',
-    'Contrato com todas paginas?','Clausula atualizacao?','Indices Correcao Pre','Indices Correcao Pos',
-    'Prazo','Qtde Parcelas','Ultimo Vencimento','Correcao','Taxas Juros','Seguro','Juros Mora',
-    'Multa','Sistema Amortizacao','Matricula','Cartorio','TVO','Cessao?',
-    'Data assinatura?','Tipo assinatura','Rubrica?',
-    'Ass. Comprador 1','Ass. Conjuge 1','Ass. Comprador 2','Ass. Conjuge 2','Ass. Vendedor','Ass. Testemunhas',
-    'Documentos Pessoais','Aditivo','Cessao Detalhes','Observacoes','Responsavel','VP Op.'];
-
-  let row = cols.map(c => {
-    let v = c.includes('Valor')||c.includes('VP')||c.includes('Comissao') ? R() :
-            c.includes('%') ? P() :
-            c.includes('Data')||c.includes('Assinatura Contrato')||c.includes('Vencimento') ? D() :
-            c.includes('?') ? 'Sim' :
-            c==='ID_Contrato' ? 'CTR-0001' : c.includes('Unidade') ? 'UN-101' :
-            c==='Empreendimento' ? 'Emp. A' : c==='Cliente' ? 'Cliente Ex.' :
-            c==='UF' ? 'SP' : c==='CEP' ? '00000-000' : '-';
-    return `<td>${v}</td>`;
-  }).join('');
+  const ad = auditData;
+  let cols = ['ID_Contrato','Unidade','Empreendimento','Cliente','CPF/CNPJ','Estado Civil','Area Privativa','Valor Contrato','Contrato na pasta?','Contrato com todas paginas?','Data assinatura?','Tipo assinatura','Rubrica?','Ass. Comprador','Ass. Vendedor','Observacoes','Responsavel'];
+  let rows = '';
+  if(ad && ad.cadastrais.length) {
+    ad.cadastrais.slice(0,100).forEach(c => {
+      rows += '<tr>' + cols.map(col => {
+        for(let k of Object.keys(c)) { if(k.toLowerCase().replace(/[\s_.]/g,'').includes(col.toLowerCase().replace(/[\s_.]/g,'').slice(0,5))) return `<td>${c[k]||'-'}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
+  }
 
   return `<h2 class="section-title"><i class="fas fa-file-contract"></i> Auditoria Documental</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody><tr>${row}</tr></tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== CESSAO DE CREDITO =====
 function genCessaoCredito(model) {
   return `<h2 class="section-title"><i class="fas fa-handshake"></i> Cessao de Credito</h2>
     <div class="card"><div class="card-header"><i class="fas fa-handshake"></i>Cessao de Creditos</div>
     <div style="min-height:200px;border:2px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:.9rem;flex-direction:column;gap:8px">
       <i class="fas fa-file-upload" style="font-size:2rem;color:var(--teal)"></i>
       <p>Area para documentacao de cessao de creditos</p>
-      <p style="font-size:.75rem">Inserir informacoes do Termo de Cessao, contratos cedidos e condicoes</p>
     </div>
     <div class="table-wrap" style="margin-top:16px"><table class="data"><thead><tr>
       <th>Termo de Cessao</th><th>Data Cessao</th><th>Cedente</th><th>Cessionario</th><th>Contratos Cedidos</th><th>Valor Cedido</th><th>Observacoes</th>
@@ -847,20 +1434,30 @@ function genCessaoCredito(model) {
     </tbody></table></div></div>`;
 }
 
-// ===== RELACAO DE CONTRATOS (Previa only) =====
 function genRelacaoContratos(model) {
+  const ad = auditData;
   let cols = ['ID_Contrato','Unidade','Cliente','Empreendimento','Data da Venda','Valor de Venda','Status','Saldo Devedor','Total Recebido'];
-  let row = `<tr><td>CTR-0001</td><td>UN-101</td><td>Cliente Exemplo</td><td>Empreendimento A</td>
-    <td>${D()}</td><td class="num">${R('150.000,00')}</td><td><span class="badge badge-ok">Ativa</span></td>
-    <td class="num">${R()}</td><td class="num">${R()}</td></tr>`;
+  let rows = '';
+  if(ad && ad.contratos.length) {
+    ad.contratos.slice(0,100).forEach(c => {
+      rows += '<tr>' + cols.map(col => {
+        for(let k of Object.keys(c)) { if(k.toLowerCase().replace(/[\s_.]/g,'').includes(col.toLowerCase().replace(/[\s_.]/g,'').slice(0,5))) return `<td>${c[k]||'-'}</td>`; }
+        return '<td>-</td>';
+      }).join('') + '</tr>';
+    });
+  } else {
+    rows = '<tr>' + cols.map(()=>'<td>-</td>').join('') + '</tr>';
+  }
 
   return `<h2 class="section-title"><i class="fas fa-file-lines"></i> Relacao de Contratos</h2>
-    <div class="card"><div class="table-wrap"><table class="data"><thead><tr>
+    <div class="card"><div class="table-wrap" style="max-height:500px;overflow-y:auto"><table class="data"><thead><tr>
     ${cols.map(c=>`<th>${c}</th>`).join('')}
-    </tr></thead><tbody>${row}</tbody></table></div></div>`;
+    </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
-// ===== INIT =====
+// ===================================================================
+// INIT
+// ===================================================================
 render();
 </script>
 </body>
