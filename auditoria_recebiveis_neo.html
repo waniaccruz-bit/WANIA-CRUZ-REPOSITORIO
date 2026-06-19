@@ -221,7 +221,9 @@ const FILES = {
   cadastrais:   {key:'cadastrais',   title:'Dados Cadastrais',       tag:'required',     icon:'fa-id-card',         accept:'.xlsx,.xls,.csv', hint:'CPF, enderecos, dados do comprador',                  data:null, name:null},
   unidades:     {key:'unidades',     title:'Relacao de Unidades',    tag:'required',     icon:'fa-building',        accept:'.xlsx,.xls,.csv', hint:'Espelho de vendas, areas, status das unidades',       data:null, name:null},
   distratos:    {key:'distratos',    title:'Historico de Distratos', tag:'optional',     icon:'fa-file-circle-xmark',accept:'.xlsx,.xls,.csv',hint:'Contratos distratados com datas e valores',           data:null, name:null},
-  extrato:      {key:'extrato',      title:'Extrato Bancario',       tag:'conditional',  icon:'fa-university',      accept:'.xlsx,.xls,.csv', hint:'Necessario para modelos com Conciliacao',             data:null, name:null}
+  extrato:      {key:'extrato',      title:'Extrato Bancario',       tag:'conditional',  icon:'fa-university',      accept:'.xlsx,.xls,.csv', hint:'Necessario para modelos com Conciliacao',             data:null, name:null},
+  aud_documental:{key:'aud_documental',title:'Auditoria Documental',  tag:'optional',     icon:'fa-file-circle-check',accept:'.xlsx,.xls,.csv', hint:'Checklist documental e verificacoes de conformidade', data:null, name:null},
+  aud_financeira:{key:'aud_financeira',title:'Auditoria Financeira',  tag:'optional',     icon:'fa-calculator',      accept:'.xlsx,.xls,.csv', hint:'Analise financeira e conciliacao de valores',         data:null, name:null}
 };
 
 let currentModel = 'sem';
