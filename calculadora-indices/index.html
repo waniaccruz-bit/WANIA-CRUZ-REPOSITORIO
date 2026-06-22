@@ -692,6 +692,24 @@
         const best = resultados[0];
         const sb = document.getElementById('summaryBox');
 
+        const diffVal = valorCorrigido - valorOriginal;
+        const calcDetailHTML = `
+            <div style="text-align:left; max-width:600px; margin:12px auto 0;">
+                <div style="background:rgba(0,107,110,0.08); border-radius:8px; padding:12px; font-size:0.88em;">
+                    <table style="width:100%;">
+                        <tr><td style="padding:3px 6px; color:var(--neo-gray-light);">Parcela original:</td>
+                            <td style="padding:3px 6px; text-align:right;"><strong>${formatBRL(valorOriginal)}</strong></td></tr>
+                        <tr><td style="padding:3px 6px; color:var(--neo-gray-light);">Parcela corrigida:</td>
+                            <td style="padding:3px 6px; text-align:right;"><strong>${formatBRL(valorCorrigido)}</strong></td></tr>
+                        <tr><td style="padding:3px 6px; color:var(--neo-gray-light);">Diferenca:</td>
+                            <td style="padding:3px 6px; text-align:right;"><strong style="color:${diffVal >= 0 ? '#00b478' : '#cc4444'};">${diffVal >= 0 ? '+' : ''}${formatBRL(diffVal)}</strong></td></tr>
+                        <tr style="border-top:1px solid rgba(0,107,110,0.15);">
+                            <td style="padding:6px 6px 3px; color:var(--neo-teal-light);">% aplicado:</td>
+                            <td style="padding:6px 6px 3px; text-align:right;"><strong style="color:var(--neo-teal-light);">${formatPercent(percentualAplicado)}</strong></td></tr>
+                    </table>
+                </div>
+            </div>`;
+
         if (best && best.status === 'exact') {
             sb.style.display = 'block';
             sb.style.borderColor = 'rgba(0,180,120,0.2)'; sb.style.background = 'rgba(0,180,120,0.06)';
@@ -699,7 +717,8 @@
                 <p>O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
                 apresenta correcao de <strong>${formatPercent(best.percentChange)}</strong>,
                 compativel com o percentual aplicado de <strong>${formatPercent(percentualAplicado)}</strong>.
-                <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong></p>`;
+                <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong></p>
+                ${calcDetailHTML}`;
         } else if (best && best.status === 'close') {
             sb.style.display = 'block';
             sb.style.borderColor = 'rgba(200,160,0,0.3)'; sb.style.background = 'rgba(200,160,0,0.06)';
@@ -707,13 +726,56 @@
                 <p>O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
                 (${formatPercent(best.percentChange)}), diferenca de <strong>${formatPercent(best.diff)}</strong>
                 em relacao ao percentual aplicado (${formatPercent(percentualAplicado)}).
-                <br>Pode haver juros adicionais ou outro componente na correcao.</p>`;
+                <br>Pode haver juros adicionais ou outro componente na correcao.</p>
+                ${calcDetailHTML}`;
         } else {
             sb.style.display = 'block';
             sb.style.borderColor = 'rgba(204,68,68,0.3)'; sb.style.background = 'rgba(204,68,68,0.06)';
-            sb.innerHTML = `<h3 style="color:#cc4444;">Nenhum Indice Compativel</h3>
-                <p>Nenhum indice padrao corresponde ao percentual de ${formatPercent(percentualAplicado)}.
-                O contrato pode usar um indice customizado, composto, ou incluir juros remuneratorios.</p>`;
+            const diffVal = valorCorrigido - valorOriginal;
+            const top5 = resultados.slice(0, 5);
+            let diagHTML = `<h3 style="color:#cc4444;">Nenhum Indice Compativel Encontrado</h3>
+                <div style="text-align:left; max-width:700px; margin:16px auto 0; line-height:1.8;">
+                <div style="background:rgba(0,107,110,0.08); border-radius:10px; padding:16px; margin-bottom:14px;">
+                    <strong style="color:var(--neo-teal-light);">Calculo Identificado no Contrato:</strong><br>
+                    <table style="width:100%; margin-top:8px; font-size:0.92em;">
+                        <tr><td style="padding:4px 8px; color:var(--neo-gray-light);">Valor original da parcela:</td>
+                            <td style="padding:4px 8px; text-align:right;"><strong>${formatBRL(valorOriginal)}</strong></td></tr>
+                        <tr><td style="padding:4px 8px; color:var(--neo-gray-light);">Valor corrigido cobrado:</td>
+                            <td style="padding:4px 8px; text-align:right;"><strong>${formatBRL(valorCorrigido)}</strong></td></tr>
+                        <tr><td style="padding:4px 8px; color:var(--neo-gray-light);">Diferenca monetaria:</td>
+                            <td style="padding:4px 8px; text-align:right;"><strong style="color:${diffVal >= 0 ? '#00b478' : '#cc4444'};">${diffVal >= 0 ? '+' : ''}${formatBRL(diffVal)}</strong></td></tr>
+                        <tr style="border-top:1px solid rgba(0,107,110,0.15);">
+                            <td style="padding:8px 8px 4px; color:var(--neo-teal-light); font-weight:600;">Percentual de correcao aplicado:</td>
+                            <td style="padding:8px 8px 4px; text-align:right;"><strong style="color:var(--neo-teal-light); font-size:1.15em;">${formatPercent(percentualAplicado)}</strong></td></tr>
+                        <tr><td style="padding:4px 8px; color:var(--neo-gray-light);">Periodo:</td>
+                            <td style="padding:4px 8px; text-align:right;">${dataBase} a ${dataCorrecao}</td></tr>
+                    </table>
+                </div>
+                <div style="background:rgba(204,68,68,0.06); border-radius:10px; padding:16px;">
+                    <strong style="color:#cc4444;">Indices mais proximos encontrados:</strong>
+                    <table style="width:100%; margin-top:8px; font-size:0.88em; border-collapse:collapse;">
+                        <tr style="color:var(--neo-gray);">
+                            <th style="text-align:left; padding:6px 4px; border-bottom:1px solid rgba(0,107,110,0.1);">Indice</th>
+                            <th style="text-align:center; padding:6px 4px; border-bottom:1px solid rgba(0,107,110,0.1);">Lag</th>
+                            <th style="text-align:right; padding:6px 4px; border-bottom:1px solid rgba(0,107,110,0.1);">% Indice</th>
+                            <th style="text-align:right; padding:6px 4px; border-bottom:1px solid rgba(0,107,110,0.1);">Valor c/ Indice</th>
+                            <th style="text-align:right; padding:6px 4px; border-bottom:1px solid rgba(0,107,110,0.1);">Diferenca</th>
+                        </tr>`;
+            for (const t of top5) {
+                diagHTML += `<tr>
+                    <td style="padding:5px 4px; border-bottom:1px solid rgba(0,107,110,0.05);"><strong>${t.nome}</strong></td>
+                    <td style="padding:5px 4px; text-align:center; border-bottom:1px solid rgba(0,107,110,0.05);">${t.lag}m</td>
+                    <td style="padding:5px 4px; text-align:right; border-bottom:1px solid rgba(0,107,110,0.05);">${formatPercent(t.percentChange)}</td>
+                    <td style="padding:5px 4px; text-align:right; border-bottom:1px solid rgba(0,107,110,0.05);">${formatBRL(t.valorCalculado)}</td>
+                    <td style="padding:5px 4px; text-align:right; border-bottom:1px solid rgba(0,107,110,0.05); color:#cc4444;">${formatPercent(t.diff)}</td>
+                </tr>`;
+            }
+            diagHTML += `</table>
+                    <p style="margin-top:10px; font-size:0.85em; color:var(--neo-gray);">
+                        O contrato pode usar um indice customizado, composto (ex: INCC-DI/IPCA), ou incluir juros remuneratorios alem da correcao monetaria.
+                    </p>
+                </div></div>`;
+            sb.innerHTML = diagHTML;
         }
 
         let rankingHTML = `<div class="info-box">
