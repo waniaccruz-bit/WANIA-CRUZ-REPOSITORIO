@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Indices de Correcao - Contratos Imobiliarios</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -13,10 +14,7 @@
             color: #e0e0e0;
             padding: 20px;
         }
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1200px; margin: 0 auto; }
         h1 {
             text-align: center;
             font-size: 1.8em;
@@ -52,16 +50,8 @@
             gap: 16px;
             margin-bottom: 16px;
         }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-        }
-        label {
-            font-size: 0.85em;
-            color: #aaa;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-size: 0.85em; color: #aaa; margin-bottom: 6px; font-weight: 500; }
         input, select {
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.15);
@@ -71,61 +61,46 @@
             font-size: 1em;
             transition: border-color 0.3s;
         }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #3a7bd5;
-        }
+        input:focus, select:focus { outline: none; border-color: #3a7bd5; }
         select option { background: #1a1a2e; color: #fff; }
         .btn {
             background: linear-gradient(135deg, #3a7bd5, #00d2ff);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 14px 36px;
-            font-size: 1.05em;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: block;
-            margin: 20px auto 0;
+            color: #fff; border: none; border-radius: 10px;
+            padding: 14px 36px; font-size: 1.05em; font-weight: 600;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            display: block; margin: 20px auto 0;
         }
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(58,123,213,0.4);
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(58,123,213,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c3483, #8e44ad);
         }
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+        .btn-secondary:hover { box-shadow: 0 6px 20px rgba(142,68,173,0.4); }
+        .btn-export {
+            background: linear-gradient(135deg, #1e8449, #27ae60);
+            padding: 10px 24px; font-size: 0.9em;
+            display: inline-block; margin: 10px 5px;
         }
+        .btn-export:hover { box-shadow: 0 6px 20px rgba(39,174,96,0.4); }
         .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 16px;
+            width: 100%; border-collapse: collapse; margin-top: 16px;
+            font-size: 0.85em;
         }
         .results-table th {
             background: rgba(58,123,213,0.2);
-            padding: 12px 10px;
-            text-align: left;
-            font-size: 0.85em;
-            color: #7eb8ff;
+            padding: 10px 8px; text-align: left;
+            font-size: 0.82em; color: #7eb8ff;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; top: 0;
         }
         .results-table td {
-            padding: 10px;
-            font-size: 0.9em;
+            padding: 8px; font-size: 0.85em;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
         .results-table tr:hover { background: rgba(255,255,255,0.03); }
-        .match { color: #00e676; font-weight: 700; }
-        .close-match { color: #ffab00; font-weight: 600; }
-        .no-match { color: #888; }
         .badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.78em;
-            font-weight: 600;
+            display: inline-block; padding: 3px 10px;
+            border-radius: 12px; font-size: 0.78em; font-weight: 600;
         }
         .badge-exact { background: rgba(0,230,118,0.2); color: #00e676; border: 1px solid rgba(0,230,118,0.3); }
         .badge-close { background: rgba(255,171,0,0.2); color: #ffab00; border: 1px solid rgba(255,171,0,0.3); }
@@ -135,78 +110,170 @@
         .info-box {
             background: rgba(58,123,213,0.1);
             border-left: 4px solid #3a7bd5;
-            padding: 14px 18px;
-            border-radius: 0 8px 8px 0;
-            margin: 16px 0;
-            font-size: 0.9em;
-            line-height: 1.6;
+            padding: 14px 18px; border-radius: 0 8px 8px 0;
+            margin: 16px 0; font-size: 0.9em; line-height: 1.6;
         }
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
+        .loading { text-align: center; padding: 40px; color: #888; }
         .spinner {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
+            display: inline-block; width: 30px; height: 30px;
             border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #3a7bd5;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 10px;
+            border-top-color: #3a7bd5; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin-bottom: 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .status-bar {
-            text-align: center;
-            padding: 8px;
-            font-size: 0.82em;
-            color: #666;
-        }
+        .status-bar { text-align: center; padding: 8px; font-size: 0.82em; color: #666; }
         .error { color: #ff5252; }
         .example-link {
-            color: #3a7bd5;
-            cursor: pointer;
-            text-decoration: underline;
-            font-size: 0.85em;
+            color: #3a7bd5; cursor: pointer; text-decoration: underline; font-size: 0.85em;
         }
         .example-link:hover { color: #00d2ff; }
         .summary-box {
-            background: rgba(0,230,118,0.08);
-            border: 1px solid rgba(0,230,118,0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
+            background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.2);
+            border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;
         }
         .summary-box h3 { color: #00e676; margin-bottom: 8px; font-size: 1.3em; }
         .summary-box p { color: #ccc; font-size: 0.95em; line-height: 1.6; }
-        .tabs {
-            display: flex;
-            gap: 4px;
-            margin-bottom: 20px;
-        }
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.05);
+            padding: 10px 20px; background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px 8px 0 0;
-            cursor: pointer;
-            color: #888;
-            font-size: 0.9em;
-            transition: all 0.3s;
+            border-radius: 8px 8px 0 0; cursor: pointer;
+            color: #888; font-size: 0.9em; transition: all 0.3s;
         }
-        .tab.active {
-            background: rgba(58,123,213,0.2);
-            color: #7eb8ff;
-            border-bottom-color: transparent;
-        }
+        .tab.active { background: rgba(58,123,213,0.2); color: #7eb8ff; border-bottom-color: transparent; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed rgba(58,123,213,0.4);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            margin-bottom: 16px;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #3a7bd5;
+            background: rgba(58,123,213,0.08);
+        }
+        .upload-area .upload-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+            display: block;
+            color: #3a7bd5;
+        }
+        .upload-area p { color: #aaa; font-size: 0.95em; }
+        .upload-area .file-types { color: #666; font-size: 0.8em; margin-top: 8px; }
+        .upload-area input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .file-loaded {
+            background: rgba(0,230,118,0.08);
+            border-color: rgba(0,230,118,0.4);
+        }
+        .file-loaded .upload-icon { color: #00e676; }
+
+        /* Preview table */
+        .preview-container {
+            max-height: 350px;
+            overflow: auto;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .preview-container::-webkit-scrollbar { width: 6px; height: 6px; }
+        .preview-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        /* Column mapping */
+        .mapping-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+        .mapping-item {
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .mapping-item label { color: #7eb8ff; font-weight: 600; }
+
+        /* Batch results */
+        .batch-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        .summary-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .summary-card .number {
+            font-size: 2em;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .summary-card .label { font-size: 0.8em; color: #888; margin-top: 4px; }
+
+        .progress-bar-container {
+            width: 100%; height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3a7bd5, #00d2ff);
+            border-radius: 4px;
+            transition: width 0.3s;
+            width: 0;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 14px 20px;
+            text-align: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.04);
+            color: #888;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, rgba(58,123,213,0.3), rgba(0,210,255,0.2));
+            color: #fff;
+        }
+        .mode-btn:hover:not(.active) { background: rgba(255,255,255,0.08); }
+        .mode-section { display: none; }
+        .mode-section.active { display: block; }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
             h1 { font-size: 1.3em; }
             .card { padding: 18px; }
+            .batch-summary { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -215,56 +282,189 @@
         <h1>Calculadora de Indices de Correcao</h1>
         <p class="subtitle">Identifique qual indice foi aplicado em contratos imobiliarios e a defasagem utilizada</p>
 
-        <div class="card">
-            <h2>Dados do Contrato</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Valor Original do Contrato (R$)</label>
-                    <input type="text" id="valorOriginal" placeholder="Ex: 350.000,00" oninput="formatMoney(this)">
-                </div>
-                <div class="form-group">
-                    <label>Data Base do Contrato</label>
-                    <input type="month" id="dataBase">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Valor Corrigido Cobrado (R$)</label>
-                    <input type="text" id="valorCorrigido" placeholder="Ex: 385.000,00" oninput="formatMoney(this)">
-                </div>
-                <div class="form-group">
-                    <label>Data da Correcao</label>
-                    <input type="month" id="dataCorrecao">
-                </div>
-            </div>
-            <div class="info-box">
-                <strong>Como funciona:</strong> Informe o valor original e o valor corrigido do contrato, junto com as datas.
-                O sistema calculara o percentual de correcao aplicado e comparara com todos os indices oficiais
-                (IPCA, IGP-M, INCC, CUB, etc.) para identificar qual foi utilizado, incluindo a defasagem de 0, 1 ou 2 meses.
-                <br><br>
-                <span class="example-link" onclick="loadExample()">Carregar exemplo de calculo</span>
-            </div>
-            <button class="btn" id="btnCalcular" onclick="calcular()">Identificar Indice Aplicado</button>
+        <!-- Mode toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" onclick="switchMode('manual')">Analise Manual (1 contrato)</button>
+            <button class="mode-btn" onclick="switchMode('upload')">Importar Planilha (lote)</button>
         </div>
 
-        <div id="resultados" style="display:none;">
-            <div id="summaryBox" class="summary-box" style="display:none;"></div>
-
+        <!-- MODO MANUAL -->
+        <div id="mode-manual" class="mode-section active">
             <div class="card">
-                <h2>Resultado da Analise</h2>
-                <div class="tabs">
-                    <div class="tab active" onclick="switchTab('ranking')">Ranking de Indices</div>
-                    <div class="tab" onclick="switchTab('detalhes')">Detalhes por Indice</div>
+                <h2>Dados do Contrato</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor Original do Contrato (R$)</label>
+                        <input type="text" id="valorOriginal" placeholder="Ex: 350.000,00" oninput="formatMoney(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>Data Base do Contrato</label>
+                        <input type="month" id="dataBase">
+                    </div>
                 </div>
-                <div id="tab-ranking" class="tab-content active">
-                    <div id="rankingContent"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor Corrigido Cobrado (R$)</label>
+                        <input type="text" id="valorCorrigido" placeholder="Ex: 385.000,00" oninput="formatMoney(this)">
+                    </div>
+                    <div class="form-group">
+                        <label>Data da Correcao</label>
+                        <input type="month" id="dataCorrecao">
+                    </div>
                 </div>
-                <div id="tab-detalhes" class="tab-content">
-                    <div id="detalhesContent"></div>
+                <div class="info-box">
+                    <strong>Como funciona:</strong> Informe o valor original e o valor corrigido do contrato, junto com as datas.
+                    O sistema calculara o percentual de correcao aplicado e comparara com todos os indices oficiais
+                    (IPCA, IGP-M, INCC, CUB, etc.) para identificar qual foi utilizado, incluindo a defasagem de 0, 1 ou 2 meses.
+                    <br><br>
+                    <span class="example-link" onclick="loadExample()">Carregar exemplo de calculo</span>
+                </div>
+                <button class="btn" id="btnCalcular" onclick="calcular()">Identificar Indice Aplicado</button>
+            </div>
+
+            <div id="resultados" style="display:none;">
+                <div id="summaryBox" class="summary-box" style="display:none;"></div>
+                <div class="card">
+                    <h2>Resultado da Analise</h2>
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('ranking', this)">Ranking de Indices</div>
+                        <div class="tab" onclick="switchTab('detalhes', this)">Detalhes por Indice</div>
+                    </div>
+                    <div id="tab-ranking" class="tab-content active">
+                        <div id="rankingContent"></div>
+                    </div>
+                    <div id="tab-detalhes" class="tab-content">
+                        <div id="detalhesContent"></div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- MODO UPLOAD -->
+        <div id="mode-upload" class="mode-section">
+            <div class="card">
+                <h2>Importar Base de Dados</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)">
+                    <span class="upload-icon">&#128196;</span>
+                    <p><strong>Clique aqui ou arraste o arquivo</strong></p>
+                    <p class="file-types">Formatos aceitos: .xlsx, .xls, .csv</p>
+                    <p id="fileName" style="color:#00e676; margin-top:10px; display:none;"></p>
+                </div>
+
+                <div id="uploadPreview" style="display:none;">
+                    <h3 style="color:#7eb8ff; font-size:1em; margin-bottom:12px;">Pre-visualizacao dos dados carregados</h3>
+                    <div class="preview-container">
+                        <div id="previewTable"></div>
+                    </div>
+                    <p id="previewCount" style="font-size:0.82em; color:#888; margin-top:8px;"></p>
+                </div>
+            </div>
+
+            <div id="mappingCard" class="card" style="display:none;">
+                <h2>Mapeamento de Colunas</h2>
+                <div class="info-box">
+                    Associe as colunas da sua planilha aos campos necessarios para a analise.
+                    O sistema tentara detectar automaticamente, mas voce pode ajustar.
+                </div>
+                <div class="mapping-grid">
+                    <div class="mapping-item">
+                        <label>ID / Contrato</label>
+                        <select id="mapId"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Unidade</label>
+                        <select id="mapUnidade"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Cliente</label>
+                        <select id="mapCliente"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Empreendimento</label>
+                        <select id="mapEmpreendimento"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Parcela</label>
+                        <select id="mapParcela"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Data de Vencimento *</label>
+                        <select id="mapDataVenc"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Data do Recebimento</label>
+                        <select id="mapDataReceb"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Valor Original *</label>
+                        <select id="mapValorOriginal"></select>
+                    </div>
+                    <div class="mapping-item">
+                        <label>Valor Pago / Corrigido *</label>
+                        <select id="mapValorPago"></select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Data base do contrato (mes/ano de referencia inicial)</label>
+                        <input type="month" id="batchDataBase">
+                    </div>
+                    <div class="form-group">
+                        <label>Tolerancia para match (%)</label>
+                        <select id="tolerancia">
+                            <option value="0.05">Muito precisa (0,05%)</option>
+                            <option value="0.3" selected>Normal (0,30%)</option>
+                            <option value="1.0">Ampla (1,00%)</option>
+                            <option value="2.0">Muito ampla (2,00%)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="btnAnalisarLote" onclick="analisarLote()">Analisar Toda a Base</button>
+            </div>
+
+            <div id="batchProgress" style="display:none;">
+                <div class="card">
+                    <h2>Processando...</h2>
+                    <p id="progressText" style="text-align:center; color:#aaa; margin-bottom:8px;">Preparando analise...</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="batchResults" style="display:none;">
+                <div class="card">
+                    <h2>Resultado da Analise em Lote</h2>
+
+                    <div class="batch-summary" id="batchSummary"></div>
+
+                    <div style="margin:16px 0; text-align:center;">
+                        <button class="btn btn-export" onclick="exportCSV()">Exportar CSV</button>
+                        <button class="btn btn-export" onclick="exportXLSX()">Exportar Excel</button>
+                    </div>
+
+                    <div class="tabs">
+                        <div class="tab active" onclick="switchTab('batchTable', this)">Tabela Completa</div>
+                        <div class="tab" onclick="switchTab('batchAgrupado', this)">Agrupado por Contrato</div>
+                        <div class="tab" onclick="switchTab('batchResumo', this)">Resumo de Indices</div>
+                    </div>
+
+                    <div id="tab-batchTable" class="tab-content active">
+                        <div class="table-scroll" id="batchTableContent"></div>
+                    </div>
+                    <div id="tab-batchAgrupado" class="tab-content">
+                        <div id="batchAgrupadoContent"></div>
+                    </div>
+                    <div id="tab-batchResumo" class="tab-content">
+                        <div id="batchResumoContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela de indices (sempre visivel) -->
         <div class="card">
             <h2>Tabela de Indices Disponiveis</h2>
             <p style="font-size:0.85em; color:#888; margin-bottom:12px;">
@@ -275,15 +475,13 @@
             </div>
         </div>
 
-        <div class="status-bar" id="statusBar">
-            Conectando com fontes de dados...
-        </div>
+        <div class="status-bar" id="statusBar">Conectando com fontes de dados...</div>
     </div>
 
     <script>
     const INDICES_CONFIG = [
         { nome: "IPCA (IBGE)", codigo: 433, fonte: "BCB", descricao: "Indice de Precos ao Consumidor Amplo" },
-        { nome: "IPCA-E (IBGE)", codigo: 10764, fonte: "BCB", descricao: "IPCA Especial - prvia do IPCA" },
+        { nome: "IPCA-E (IBGE)", codigo: 10764, fonte: "BCB", descricao: "IPCA Especial - previa do IPCA" },
         { nome: "IPCA-15 (IBGE)", codigo: 7478, fonte: "BCB", descricao: "IPCA-15 coletado do dia 16 ao 15" },
         { nome: "IGP-M (FGV)", codigo: 189, fonte: "BCB", descricao: "Indice Geral de Precos - Mercado" },
         { nome: "IGP-DI (FGV)", codigo: 190, fonte: "BCB", descricao: "Indice Geral de Precos - Disponibilidade Interna" },
@@ -291,9 +489,9 @@
         { nome: "INCC-DI (FGV)", codigo: 192, fonte: "BCB", descricao: "Indice Nacional de Custo da Construcao - DI" },
         { nome: "INCC-M (FGV)", codigo: 188, fonte: "BCB", descricao: "Indice Nacional de Custo da Construcao - M" },
         { nome: "IPC-A (FIPE)", codigo: 193, fonte: "BCB", descricao: "Indice de Precos ao Consumidor - FIPE" },
-        { nome: "INPC (IBGE)", codigo: 188, fonte: "BCB_ALT", descricao: "Indice Nacional de Precos ao Consumidor" },
         { nome: "IPA-M (FGV)", codigo: 7450, fonte: "BCB", descricao: "Indice de Precos por Atacado - M" },
         { nome: "IPA-DI (FGV)", codigo: 7449, fonte: "BCB", descricao: "Indice de Precos por Atacado - DI" },
+        { nome: "INPC (IBGE)", codigo: 1100, fonte: "BCB", descricao: "Indice Nacional de Precos ao Consumidor" },
         { nome: "SELIC (meta)", codigo: 432, fonte: "BCB", descricao: "Taxa SELIC meta anualizada" },
         { nome: "CDI", codigo: 4391, fonte: "BCB", descricao: "Taxa CDI anualizada" },
         { nome: "TR", codigo: 226, fonte: "BCB", descricao: "Taxa Referencial" },
@@ -301,10 +499,13 @@
         { nome: "Poupanca", codigo: 25, fonte: "BCB", descricao: "Rendimento da poupanca (1o dia)" },
     ];
 
-    const INPC_CODIGO = 188;
-
     let indicesData = {};
     let calculating = false;
+    let uploadedData = null;
+    let uploadedHeaders = [];
+    let batchResultsData = [];
+
+    // ==================== UTILITIES ====================
 
     function formatMoney(input) {
         let v = input.value.replace(/\D/g, '');
@@ -317,20 +518,35 @@
 
     function parseMoney(str) {
         if (!str) return NaN;
-        return parseFloat(str.replace(/\./g, '').replace(',', '.'));
+        if (typeof str === 'number') return str;
+        return parseFloat(String(str).replace(/\./g, '').replace(',', '.'));
     }
 
     function formatPercent(val) {
+        if (isNaN(val)) return '-';
         return val.toFixed(4).replace('.', ',') + '%';
     }
+
+    function formatBRL(val) {
+        if (isNaN(val)) return '-';
+        return 'R$ ' + val.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
+    }
+
+    // ==================== BCB API ====================
 
     async function fetchBCBSeries(codigo, dataInicio, dataFim) {
         const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${codigo}/dados?formato=json&dataInicial=${dataInicio}&dataFinal=${dataFim}`;
         try {
             const resp = await fetch(url);
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
-            return data;
+            return await resp.json();
         } catch (e) {
             console.warn(`Erro ao buscar serie ${codigo}:`, e);
             return null;
@@ -340,8 +556,7 @@
     function dateToStr(date) {
         const d = String(date.getDate()).padStart(2, '0');
         const m = String(date.getMonth() + 1).padStart(2, '0');
-        const y = date.getFullYear();
-        return `${d}/${m}/${y}`;
+        return `${d}/${m}/${date.getFullYear()}`;
     }
 
     function monthKey(dateStr) {
@@ -353,12 +568,6 @@
         const [y, m] = yearMonth.split('-').map(Number);
         const date = new Date(y, m - 1 + n, 1);
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-    }
-
-    function getMonthsBetween(start, end) {
-        const [sy, sm] = start.split('-').map(Number);
-        const [ey, em] = end.split('-').map(Number);
-        return (ey - sy) * 12 + (em - sm);
     }
 
     function getAllMonths(start, end) {
@@ -374,12 +583,9 @@
     function calcAccumulatedIndex(seriesData, startMonth, endMonth, lag) {
         const adjustedStart = addMonths(startMonth, -lag);
         const adjustedEnd = addMonths(endMonth, -lag);
-
         const months = getAllMonths(addMonths(adjustedStart, 1), adjustedEnd);
-
         let accumulated = 1;
         let missingMonths = [];
-
         for (const m of months) {
             const val = seriesData[m];
             if (val !== undefined && val !== null) {
@@ -388,9 +594,7 @@
                 missingMonths.push(m);
             }
         }
-
-        const percentChange = (accumulated - 1) * 100;
-        return { percentChange, missingMonths, monthsUsed: months.length };
+        return { percentChange: (accumulated - 1) * 100, missingMonths, monthsUsed: months.length };
     }
 
     async function loadAllIndices(dataBase, dataCorrecao) {
@@ -398,15 +602,10 @@
         startDate.setMonth(startDate.getMonth() - 3);
         const endDate = new Date(dataCorrecao + '-01');
         endDate.setMonth(endDate.getMonth() + 1);
-
         const dataInicio = dateToStr(startDate);
         const dataFim = dateToStr(endDate);
 
         const promises = INDICES_CONFIG.map(async (idx) => {
-            if (idx.fonte === 'BCB_ALT') {
-                const data = await fetchBCBSeries(7478, dataInicio, dataFim);
-                return { ...idx, nome: "INPC (IBGE)", codigo: 188, rawData: null, simulated: true };
-            }
             const data = await fetchBCBSeries(idx.codigo, dataInicio, dataFim);
             return { ...idx, rawData: data };
         });
@@ -414,42 +613,53 @@
         const results = await Promise.all(promises);
 
         for (const result of results) {
-            if (result.simulated) continue;
             const monthlyData = {};
             if (result.rawData && Array.isArray(result.rawData)) {
                 for (const item of result.rawData) {
                     const mk = monthKey(item.data);
                     const val = parseFloat(item.valor);
                     if (!isNaN(val)) {
-                        if (!monthlyData[mk]) {
-                            monthlyData[mk] = val;
-                        } else {
-                            monthlyData[mk] += val;
-                        }
+                        if (!monthlyData[mk]) monthlyData[mk] = val;
+                        else monthlyData[mk] += val;
                     }
                 }
-
                 if ([432, 4391].includes(result.codigo)) {
                     for (const mk in monthlyData) {
-                        const annualRate = monthlyData[mk];
-                        monthlyData[mk] = (Math.pow(1 + annualRate / 100, 1/12) - 1) * 100;
+                        monthlyData[mk] = (Math.pow(1 + monthlyData[mk] / 100, 1/12) - 1) * 100;
                     }
                 }
-
-                if (result.codigo === 25) {
-                    // poupanca already monthly
-                }
             }
-            indicesData[result.nome] = {
-                ...result,
-                monthlyData
-            };
+            indicesData[result.nome] = { ...result, monthlyData };
         }
     }
 
+    // ==================== MODE SWITCHING ====================
+
+    function switchMode(mode) {
+        document.querySelectorAll('.mode-btn').forEach((b, i) => {
+            b.classList.toggle('active', (mode === 'manual' && i === 0) || (mode === 'upload' && i === 1));
+        });
+        document.getElementById('mode-manual').classList.toggle('active', mode === 'manual');
+        document.getElementById('mode-upload').classList.toggle('active', mode === 'upload');
+    }
+
+    function switchTab(tabName, btn) {
+        const parent = btn ? btn.closest('.card') : document.querySelector('.card');
+        if (btn) {
+            btn.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        const card = btn ? btn.closest('.card') : null;
+        const scope = card || document;
+        scope.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        const target = document.getElementById('tab-' + tabName);
+        if (target) target.classList.add('active');
+    }
+
+    // ==================== MANUAL MODE ====================
+
     async function calcular() {
         if (calculating) return;
-
         const valorOriginal = parseMoney(document.getElementById('valorOriginal').value);
         const valorCorrigido = parseMoney(document.getElementById('valorCorrigido').value);
         const dataBase = document.getElementById('dataBase').value;
@@ -459,7 +669,6 @@
             alert('Por favor, preencha todos os campos corretamente.');
             return;
         }
-
         if (dataCorrecao <= dataBase) {
             alert('A data de correcao deve ser posterior a data base.');
             return;
@@ -475,45 +684,27 @@
 
         try {
             await loadAllIndices(dataBase, dataCorrecao);
-
             const resultados = [];
-
             for (const [nome, idx] of Object.entries(indicesData)) {
                 if (!idx.monthlyData || Object.keys(idx.monthlyData).length === 0) continue;
-
                 for (let lag = 0; lag <= 2; lag++) {
                     const result = calcAccumulatedIndex(idx.monthlyData, dataBase, dataCorrecao, lag);
                     const diff = Math.abs(result.percentChange - percentualAplicado);
-                    const diffPercent = percentualAplicado !== 0 ? (diff / Math.abs(percentualAplicado)) * 100 : diff;
-
-                    let status;
-                    if (diff <= 0.05) status = 'exact';
-                    else if (diff <= 0.3) status = 'close';
-                    else status = 'no';
-
+                    let status = diff <= 0.05 ? 'exact' : diff <= 0.3 ? 'close' : 'no';
                     resultados.push({
-                        nome,
-                        descricao: idx.descricao,
-                        lag,
+                        nome, descricao: idx.descricao, lag,
                         percentChange: result.percentChange,
                         valorCalculado: valorOriginal * (1 + result.percentChange / 100),
-                        diff,
-                        diffPercent,
-                        status,
-                        missingMonths: result.missingMonths,
-                        monthsUsed: result.monthsUsed
+                        diff, status, missingMonths: result.missingMonths, monthsUsed: result.monthsUsed
                     });
                 }
             }
-
             resultados.sort((a, b) => a.diff - b.diff);
             displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao);
-
         } catch (e) {
             console.error(e);
             document.getElementById('statusBar').innerHTML = `<span class="error">Erro ao buscar dados. Verifique sua conexao.</span>`;
         }
-
         calculating = false;
         btn.disabled = false;
         btn.textContent = 'Identificar Indice Aplicado';
@@ -521,144 +712,84 @@
 
     function displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao) {
         document.getElementById('resultados').style.display = 'block';
-
         const best = resultados[0];
         const summaryBox = document.getElementById('summaryBox');
 
         if (best && best.status === 'exact') {
             summaryBox.style.display = 'block';
-            summaryBox.innerHTML = `
-                <h3>Indice Identificado: ${best.nome}</h3>
-                <p>
-                    O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
-                    apresenta correcao de <strong>${formatPercent(best.percentChange)}</strong>,
-                    compativel com o percentual aplicado de <strong>${formatPercent(percentualAplicado)}</strong>.
-                    <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong>
-                </p>
-            `;
+            summaryBox.style.borderColor = 'rgba(0,230,118,0.2)';
+            summaryBox.style.background = 'rgba(0,230,118,0.08)';
+            summaryBox.innerHTML = `<h3>Indice Identificado: ${best.nome}</h3>
+                <p>O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
+                apresenta correcao de <strong>${formatPercent(best.percentChange)}</strong>,
+                compativel com o percentual aplicado de <strong>${formatPercent(percentualAplicado)}</strong>.
+                <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong></p>`;
         } else if (best && best.status === 'close') {
             summaryBox.style.display = 'block';
             summaryBox.style.borderColor = 'rgba(255,171,0,0.3)';
             summaryBox.style.background = 'rgba(255,171,0,0.08)';
-            summaryBox.innerHTML = `
-                <h3 style="color:#ffab00;">Indice Mais Proximo: ${best.nome}</h3>
-                <p>
-                    O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
-                    (${formatPercent(best.percentChange)}), mas ha uma diferenca de <strong>${formatPercent(best.diff)}</strong>
-                    em relacao ao percentual aplicado (${formatPercent(percentualAplicado)}).
-                    <br>Pode haver juros adicionais ou outro componente na correcao.
-                </p>
-            `;
+            summaryBox.innerHTML = `<h3 style="color:#ffab00;">Indice Mais Proximo: ${best.nome}</h3>
+                <p>O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
+                (${formatPercent(best.percentChange)}), diferenca de <strong>${formatPercent(best.diff)}</strong>
+                em relacao ao percentual aplicado (${formatPercent(percentualAplicado)}).
+                <br>Pode haver juros adicionais ou outro componente na correcao.</p>`;
         } else {
             summaryBox.style.display = 'block';
             summaryBox.style.borderColor = 'rgba(255,82,82,0.3)';
             summaryBox.style.background = 'rgba(255,82,82,0.08)';
-            summaryBox.innerHTML = `
-                <h3 style="color:#ff5252;">Nenhum Indice Compativel</h3>
-                <p>
-                    Nenhum indice padrao corresponde ao percentual de ${formatPercent(percentualAplicado)}.
-                    O contrato pode usar um indice customizado, composto, ou incluir juros remuneratorios.
-                </p>
-            `;
+            summaryBox.innerHTML = `<h3 style="color:#ff5252;">Nenhum Indice Compativel</h3>
+                <p>Nenhum indice padrao corresponde ao percentual de ${formatPercent(percentualAplicado)}.
+                O contrato pode usar um indice customizado, composto, ou incluir juros remuneratorios.</p>`;
         }
 
-        // Ranking tab
-        let rankingHTML = `
-            <div class="info-box">
-                <strong>Percentual aplicado no contrato:</strong> ${formatPercent(percentualAplicado)}
-                &nbsp;|&nbsp;
-                <strong>Periodo:</strong> ${dataBase} a ${dataCorrecao}
-                &nbsp;|&nbsp;
-                <strong>Valor original:</strong> R$ ${valorOriginal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                &nbsp;|&nbsp;
-                <strong>Valor corrigido:</strong> R$ ${valorCorrigido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+        let rankingHTML = `<div class="info-box">
+            <strong>Percentual aplicado:</strong> ${formatPercent(percentualAplicado)} |
+            <strong>Periodo:</strong> ${dataBase} a ${dataCorrecao} |
+            <strong>Valor original:</strong> ${formatBRL(valorOriginal)} |
+            <strong>Valor corrigido:</strong> ${formatBRL(valorCorrigido)}
             </div>
-            <table class="results-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Indice</th>
-                        <th>Defasagem</th>
-                        <th>Correcao Calculada</th>
-                        <th>Valor Corrigido Calc.</th>
-                        <th>Diferenca</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
+            <table class="results-table"><thead><tr>
+            <th>#</th><th>Indice</th><th>Defasagem</th><th>Correcao Calc.</th><th>Valor Corrigido Calc.</th><th>Diferenca</th><th>Status</th>
+            </tr></thead><tbody>`;
 
         resultados.slice(0, 30).forEach((r, i) => {
             const rowClass = r.status === 'exact' ? 'highlight-row' : '';
             const badgeClass = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
             const statusText = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-
-            rankingHTML += `
-                <tr class="${rowClass}">
-                    <td>${i + 1}</td>
-                    <td><strong>${r.nome}</strong><br><small style="color:#666">${r.descricao}</small></td>
-                    <td><span class="badge badge-lag">${r.lag} mes(es)</span></td>
-                    <td>${formatPercent(r.percentChange)}</td>
-                    <td>R$ ${r.valorCalculado.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td>${formatPercent(r.diff)}</td>
-                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
-                </tr>
-            `;
+            rankingHTML += `<tr class="${rowClass}">
+                <td>${i+1}</td>
+                <td><strong>${r.nome}</strong><br><small style="color:#666">${r.descricao}</small></td>
+                <td><span class="badge badge-lag">${r.lag} mes(es)</span></td>
+                <td>${formatPercent(r.percentChange)}</td>
+                <td>${formatBRL(r.valorCalculado)}</td>
+                <td>${formatPercent(r.diff)}</td>
+                <td><span class="badge ${badgeClass}">${statusText}</span></td></tr>`;
         });
-
         rankingHTML += '</tbody></table>';
         document.getElementById('rankingContent').innerHTML = rankingHTML;
 
-        // Detalhes tab
         const groupedByIndex = {};
         for (const r of resultados) {
             if (!groupedByIndex[r.nome]) groupedByIndex[r.nome] = [];
             groupedByIndex[r.nome].push(r);
         }
-
         let detalhesHTML = '';
         for (const [nome, items] of Object.entries(groupedByIndex)) {
-            const bestItem = items.sort((a, b) => a.diff - b.diff)[0];
-            detalhesHTML += `
-                <div style="margin-bottom:20px; padding:16px; background:rgba(255,255,255,0.03); border-radius:10px;">
-                    <h3 style="font-size:1em; color:#7eb8ff; margin-bottom:10px;">${nome}</h3>
-                    <table class="results-table">
-                        <thead>
-                            <tr>
-                                <th>Defasagem</th>
-                                <th>Correcao</th>
-                                <th>Valor Calculado</th>
-                                <th>Diferenca</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+            detalhesHTML += `<div style="margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;">
+                <h3 style="font-size:1em;color:#7eb8ff;margin-bottom:10px;">${nome}</h3>
+                <table class="results-table"><thead><tr><th>Defasagem</th><th>Correcao</th><th>Valor Calculado</th><th>Diferenca</th><th>Status</th></tr></thead><tbody>`;
             for (const item of items.sort((a, b) => a.lag - b.lag)) {
-                const badgeClass = item.status === 'exact' ? 'badge-exact' : item.status === 'close' ? 'badge-close' : 'badge-no';
-                const statusText = item.status === 'exact' ? 'COMPATIVEL' : item.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-                detalhesHTML += `
-                    <tr class="${item.status === 'exact' ? 'highlight-row' : ''}">
-                        <td>${item.lag} mes(es)</td>
-                        <td>${formatPercent(item.percentChange)}</td>
-                        <td>R$ ${item.valorCalculado.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                        <td>${formatPercent(item.diff)}</td>
-                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
-                    </tr>
-                `;
+                const bc = item.status === 'exact' ? 'badge-exact' : item.status === 'close' ? 'badge-close' : 'badge-no';
+                const st = item.status === 'exact' ? 'COMPATIVEL' : item.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+                detalhesHTML += `<tr class="${item.status === 'exact' ? 'highlight-row' : ''}">
+                    <td>${item.lag} mes(es)</td><td>${formatPercent(item.percentChange)}</td>
+                    <td>${formatBRL(item.valorCalculado)}</td><td>${formatPercent(item.diff)}</td>
+                    <td><span class="badge ${bc}">${st}</span></td></tr>`;
             }
             detalhesHTML += '</tbody></table></div>';
         }
         document.getElementById('detalhesContent').innerHTML = detalhesHTML;
-
-        document.getElementById('statusBar').textContent = `Analise concluida em ${new Date().toLocaleTimeString('pt-BR')} - ${resultados.length} combinacoes testadas`;
-    }
-
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.getElementById('tab-' + tabName).classList.add('active');
-        event.target.classList.add('active');
+        document.getElementById('statusBar').textContent = `Analise concluida - ${resultados.length} combinacoes testadas`;
     }
 
     function loadExample() {
@@ -668,6 +799,485 @@
         document.getElementById('dataCorrecao').value = '2024-01';
     }
 
+    // ==================== UPLOAD MODE ====================
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileName').style.display = 'block';
+        document.getElementById('uploadArea').classList.add('file-loaded');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+                if (json.length === 0) {
+                    alert('A planilha esta vazia.');
+                    return;
+                }
+
+                uploadedHeaders = Object.keys(json[0]);
+                uploadedData = json;
+
+                showPreview(json);
+                setupMapping(uploadedHeaders);
+                document.getElementById('mappingCard').style.display = 'block';
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao ler arquivo: ' + err.message);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Drag and drop
+    const uploadArea = document.getElementById('uploadArea');
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            document.getElementById('fileInput').files = e.dataTransfer.files;
+            handleFileUpload({ target: { files: [file] } });
+        }
+    });
+
+    function showPreview(data) {
+        const headers = Object.keys(data[0]);
+        const previewRows = data.slice(0, 8);
+
+        let html = '<table class="results-table"><thead><tr>';
+        html += '<th>#</th>';
+        headers.forEach(h => { html += `<th>${escapeHtml(h)}</th>`; });
+        html += '</tr></thead><tbody>';
+
+        previewRows.forEach((row, i) => {
+            html += '<tr>';
+            html += `<td>${i + 1}</td>`;
+            headers.forEach(h => {
+                let val = row[h];
+                if (val instanceof Date) val = val.toLocaleDateString('pt-BR');
+                else if (typeof val === 'number') val = val.toLocaleString('pt-BR');
+                html += `<td>${escapeHtml(val)}</td>`;
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        document.getElementById('previewTable').innerHTML = html;
+        document.getElementById('previewCount').textContent = `Total: ${data.length} linhas carregadas`;
+        document.getElementById('uploadPreview').style.display = 'block';
+    }
+
+    function setupMapping(headers) {
+        const mappings = {
+            mapId: ['id_contrato', 'id', 'contrato', 'cod', 'codigo', 'num'],
+            mapUnidade: ['unidade', 'und', 'unit', 'apt', 'apto', 'lote'],
+            mapCliente: ['cliente', 'nome', 'comprador', 'client', 'name'],
+            mapEmpreendimento: ['empreendimento', 'obra', 'projeto', 'project', 'emp'],
+            mapParcela: ['parcela', 'parc', 'nro_parcela', 'numero_parcela', 'installment'],
+            mapDataVenc: ['dt_venc', 'dt venc', 'vencimento', 'data_vencimento', 'data vencimento', 'due_date', 'dt venc.'],
+            mapDataReceb: ['data_recebimento', 'data do recebimento', 'dt_receb', 'dt_pagamento', 'data_pagamento', 'data pagamento', 'payment_date'],
+            mapValorOriginal: ['valor_original', 'valor original', 'vl_original', 'valor', 'value', 'vl_contrato'],
+            mapValorPago: ['valor_pago', 'valor pago', 'vl_pago', 'valor_corrigido', 'valor corrigido', 'paid', 'vl_recebido']
+        };
+
+        const lowerHeaders = headers.map(h => h.toLowerCase().trim());
+
+        for (const [selectId, keywords] of Object.entries(mappings)) {
+            const sel = document.getElementById(selectId);
+            sel.innerHTML = '<option value="">-- Nao mapear --</option>';
+            headers.forEach((h, i) => {
+                sel.innerHTML += `<option value="${i}">${escapeHtml(h)}</option>`;
+            });
+
+            let bestMatch = -1;
+            for (const kw of keywords) {
+                const idx = lowerHeaders.findIndex(lh => lh.includes(kw));
+                if (idx >= 0) { bestMatch = idx; break; }
+            }
+            if (bestMatch >= 0) sel.value = String(bestMatch);
+        }
+    }
+
+    function getMapping() {
+        const get = (id) => {
+            const val = document.getElementById(id).value;
+            return val !== '' ? parseInt(val) : -1;
+        };
+        return {
+            id: get('mapId'),
+            unidade: get('mapUnidade'),
+            cliente: get('mapCliente'),
+            empreendimento: get('mapEmpreendimento'),
+            parcela: get('mapParcela'),
+            dataVenc: get('mapDataVenc'),
+            dataReceb: get('mapDataReceb'),
+            valorOriginal: get('mapValorOriginal'),
+            valorPago: get('mapValorPago'),
+        };
+    }
+
+    function parseDateToMonth(val) {
+        if (!val) return null;
+        if (val instanceof Date) {
+            return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}`;
+        }
+        const s = String(val).trim();
+        // DD/MM/YYYY
+        let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (m) return `${m[3]}-${m[2].padStart(2, '0')}`;
+        // YYYY-MM-DD
+        m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+        if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+        // YYYY-MM
+        m = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
+        if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+        return null;
+    }
+
+    function getFieldValue(row, colIndex) {
+        if (colIndex < 0) return '';
+        return Object.values(row)[colIndex];
+    }
+
+    async function analisarLote() {
+        if (!uploadedData || uploadedData.length === 0) {
+            alert('Carregue uma planilha primeiro.');
+            return;
+        }
+
+        const mapping = getMapping();
+        if (mapping.valorOriginal < 0 || mapping.valorPago < 0 || mapping.dataVenc < 0) {
+            alert('Mapeie pelo menos: Data de Vencimento, Valor Original e Valor Pago.');
+            return;
+        }
+
+        const batchDataBase = document.getElementById('batchDataBase').value;
+        const tolerancia = parseFloat(document.getElementById('tolerancia').value);
+
+        const btn = document.getElementById('btnAnalisarLote');
+        btn.disabled = true;
+        btn.textContent = 'Processando...';
+        document.getElementById('batchProgress').style.display = 'block';
+        document.getElementById('batchResults').style.display = 'none';
+
+        await new Promise(r => setTimeout(r, 50));
+
+        try {
+            // Find date range from data
+            let minDate = '9999-12';
+            let maxDate = '0000-01';
+            const rows = [];
+
+            for (const row of uploadedData) {
+                const valOrig = parseMoney(getFieldValue(row, mapping.valorOriginal));
+                const valPago = parseMoney(getFieldValue(row, mapping.valorPago));
+                const dateVenc = parseDateToMonth(getFieldValue(row, mapping.dataVenc));
+                const dateReceb = mapping.dataReceb >= 0 ? parseDateToMonth(getFieldValue(row, mapping.dataReceb)) : null;
+
+                if (isNaN(valOrig) || isNaN(valPago) || !dateVenc) continue;
+
+                const dataRef = dateReceb || dateVenc;
+                if (dataRef < minDate) minDate = dataRef;
+                if (dataRef > maxDate) maxDate = dataRef;
+
+                rows.push({
+                    id: mapping.id >= 0 ? getFieldValue(row, mapping.id) : '',
+                    unidade: mapping.unidade >= 0 ? getFieldValue(row, mapping.unidade) : '',
+                    cliente: mapping.cliente >= 0 ? getFieldValue(row, mapping.cliente) : '',
+                    empreendimento: mapping.empreendimento >= 0 ? getFieldValue(row, mapping.empreendimento) : '',
+                    parcela: mapping.parcela >= 0 ? getFieldValue(row, mapping.parcela) : '',
+                    dataVenc: dateVenc,
+                    dataReceb: dateReceb || dateVenc,
+                    valorOriginal: valOrig,
+                    valorPago: valPago,
+                    percentual: valOrig !== 0 ? ((valPago / valOrig) - 1) * 100 : 0
+                });
+            }
+
+            if (rows.length === 0) {
+                alert('Nenhuma linha valida encontrada. Verifique o mapeamento de colunas.');
+                btn.disabled = false;
+                btn.textContent = 'Analisar Toda a Base';
+                document.getElementById('batchProgress').style.display = 'none';
+                return;
+            }
+
+            const startBase = batchDataBase || addMonths(minDate, -1);
+            const endRef = maxDate;
+
+            updateProgress(10, 'Buscando indices do Banco Central...');
+            await loadAllIndices(addMonths(startBase, -3), addMonths(endRef, 2));
+            updateProgress(40, 'Indices carregados. Analisando parcelas...');
+
+            batchResultsData = [];
+            const total = rows.length;
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                if (i % 10 === 0) {
+                    updateProgress(40 + (i / total) * 55, `Analisando parcela ${i + 1} de ${total}...`);
+                    await new Promise(r => setTimeout(r, 0));
+                }
+
+                const dataBase = batchDataBase || row.dataVenc;
+                const dataCorrecao = row.dataReceb;
+
+                if (Math.abs(row.percentual) < 0.001) {
+                    batchResultsData.push({
+                        ...row,
+                        indiceIdentificado: 'Sem correcao',
+                        lag: '-',
+                        correcaoCalculada: 0,
+                        diferenca: 0,
+                        status: 'exact'
+                    });
+                    continue;
+                }
+
+                if (dataCorrecao <= dataBase) {
+                    batchResultsData.push({
+                        ...row,
+                        indiceIdentificado: 'Periodo invalido',
+                        lag: '-',
+                        correcaoCalculada: 0,
+                        diferenca: 0,
+                        status: 'no'
+                    });
+                    continue;
+                }
+
+                let bestMatch = null;
+                for (const [nome, idx] of Object.entries(indicesData)) {
+                    if (!idx.monthlyData || Object.keys(idx.monthlyData).length === 0) continue;
+                    for (let lag = 0; lag <= 2; lag++) {
+                        const result = calcAccumulatedIndex(idx.monthlyData, dataBase, dataCorrecao, lag);
+                        const diff = Math.abs(result.percentChange - row.percentual);
+                        if (!bestMatch || diff < bestMatch.diff) {
+                            bestMatch = { nome, lag, percentChange: result.percentChange, diff };
+                        }
+                    }
+                }
+
+                if (bestMatch) {
+                    let status = bestMatch.diff <= tolerancia * 0.167 ? 'exact' : bestMatch.diff <= tolerancia ? 'close' : 'no';
+                    batchResultsData.push({
+                        ...row,
+                        indiceIdentificado: bestMatch.nome,
+                        lag: bestMatch.lag,
+                        correcaoCalculada: bestMatch.percentChange,
+                        diferenca: bestMatch.diff,
+                        status
+                    });
+                } else {
+                    batchResultsData.push({
+                        ...row,
+                        indiceIdentificado: 'Nao identificado',
+                        lag: '-',
+                        correcaoCalculada: 0,
+                        diferenca: 999,
+                        status: 'no'
+                    });
+                }
+            }
+
+            updateProgress(100, 'Concluido!');
+            displayBatchResults(batchResultsData);
+
+        } catch (e) {
+            console.error(e);
+            alert('Erro na analise: ' + e.message);
+        }
+
+        btn.disabled = false;
+        btn.textContent = 'Analisar Toda a Base';
+        document.getElementById('batchProgress').style.display = 'none';
+    }
+
+    function updateProgress(pct, text) {
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressText').textContent = text;
+    }
+
+    function displayBatchResults(data) {
+        document.getElementById('batchResults').style.display = 'block';
+
+        const total = data.length;
+        const exatos = data.filter(d => d.status === 'exact').length;
+        const proximos = data.filter(d => d.status === 'close').length;
+        const divergentes = data.filter(d => d.status === 'no').length;
+        const comCorrecao = data.filter(d => d.indiceIdentificado !== 'Sem correcao' && d.indiceIdentificado !== 'Periodo invalido').length;
+
+        document.getElementById('batchSummary').innerHTML = `
+            <div class="summary-card"><div class="number">${total}</div><div class="label">Total de Parcelas</div></div>
+            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#00e676;">${exatos}</div><div class="label">Indices Compativeis</div></div>
+            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#ffab00;">${proximos}</div><div class="label">Indices Proximos</div></div>
+            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#ff5252;">${divergentes}</div><div class="label">Divergentes</div></div>
+        `;
+
+        // Full table
+        let tableHTML = `<table class="results-table"><thead><tr>
+            <th>#</th><th>Contrato</th><th>Unidade</th><th>Cliente</th><th>Parcela</th>
+            <th>Dt Venc.</th><th>Dt Receb.</th><th>Valor Original</th><th>Valor Pago</th>
+            <th>% Aplicado</th><th>Indice Identificado</th><th>Defasagem</th><th>% Calculado</th>
+            <th>Diferenca</th><th>Status</th>
+            </tr></thead><tbody>`;
+
+        data.forEach((r, i) => {
+            const bc = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
+            const st = r.status === 'exact' ? 'OK' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+            const rc = r.status === 'exact' ? 'highlight-row' : '';
+            tableHTML += `<tr class="${rc}">
+                <td>${i+1}</td>
+                <td>${escapeHtml(r.id)}</td>
+                <td>${escapeHtml(r.unidade)}</td>
+                <td>${escapeHtml(r.cliente)}</td>
+                <td>${escapeHtml(r.parcela)}</td>
+                <td>${r.dataVenc}</td>
+                <td>${r.dataReceb}</td>
+                <td>${formatBRL(r.valorOriginal)}</td>
+                <td>${formatBRL(r.valorPago)}</td>
+                <td>${formatPercent(r.percentual)}</td>
+                <td><strong>${escapeHtml(r.indiceIdentificado)}</strong></td>
+                <td>${r.lag !== '-' ? `<span class="badge badge-lag">${r.lag} mes(es)</span>` : '-'}</td>
+                <td>${formatPercent(r.correcaoCalculada)}</td>
+                <td>${formatPercent(r.diferenca)}</td>
+                <td><span class="badge ${bc}">${st}</span></td></tr>`;
+        });
+        tableHTML += '</tbody></table>';
+        document.getElementById('batchTableContent').innerHTML = tableHTML;
+
+        // Grouped by contract
+        const grouped = {};
+        for (const r of data) {
+            const key = `${r.id}-${r.unidade}`;
+            if (!grouped[key]) grouped[key] = { ...r, parcelas: [] };
+            grouped[key].parcelas.push(r);
+        }
+
+        let groupHTML = '';
+        for (const [key, g] of Object.entries(grouped)) {
+            const indices = {};
+            g.parcelas.forEach(p => {
+                if (p.indiceIdentificado && p.status !== 'no') {
+                    const k = `${p.indiceIdentificado} (lag ${p.lag})`;
+                    indices[k] = (indices[k] || 0) + 1;
+                }
+            });
+            const mainIndex = Object.entries(indices).sort((a,b) => b[1] - a[1])[0];
+
+            groupHTML += `<div style="margin-bottom:16px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                    <div>
+                        <strong style="color:#7eb8ff;">Contrato ${escapeHtml(g.id)} - Unidade ${escapeHtml(g.unidade)}</strong>
+                        <span style="color:#888;font-size:0.85em;margin-left:8px;">${escapeHtml(g.cliente)} | ${escapeHtml(g.empreendimento)}</span>
+                    </div>
+                    <div>
+                        ${mainIndex ? `<span class="badge badge-exact">Provavel: ${mainIndex[0]} (${mainIndex[1]}x)</span>` : '<span class="badge badge-no">Indefinido</span>'}
+                    </div>
+                </div>
+                <table class="results-table"><thead><tr>
+                    <th>Parcela</th><th>Dt Venc.</th><th>Valor Orig.</th><th>Valor Pago</th><th>% Aplicado</th>
+                    <th>Indice</th><th>Lag</th><th>Status</th></tr></thead><tbody>`;
+
+            for (const p of g.parcelas.sort((a,b) => a.dataVenc.localeCompare(b.dataVenc))) {
+                const bc = p.status === 'exact' ? 'badge-exact' : p.status === 'close' ? 'badge-close' : 'badge-no';
+                const st = p.status === 'exact' ? 'OK' : p.status === 'close' ? '~' : 'X';
+                groupHTML += `<tr class="${p.status === 'exact' ? 'highlight-row' : ''}">
+                    <td>${escapeHtml(p.parcela)}</td><td>${p.dataVenc}</td>
+                    <td>${formatBRL(p.valorOriginal)}</td><td>${formatBRL(p.valorPago)}</td>
+                    <td>${formatPercent(p.percentual)}</td>
+                    <td>${escapeHtml(p.indiceIdentificado)}</td>
+                    <td>${p.lag}</td>
+                    <td><span class="badge ${bc}">${st}</span></td></tr>`;
+            }
+            groupHTML += '</tbody></table></div>';
+        }
+        document.getElementById('batchAgrupadoContent').innerHTML = groupHTML;
+
+        // Index summary
+        const indexCount = {};
+        for (const r of data) {
+            if (r.indiceIdentificado === 'Sem correcao' || r.indiceIdentificado === 'Periodo invalido') continue;
+            const k = r.indiceIdentificado;
+            if (!indexCount[k]) indexCount[k] = { exact: 0, close: 0, no: 0, total: 0 };
+            indexCount[k][r.status]++;
+            indexCount[k].total++;
+        }
+
+        let resumoHTML = '<table class="results-table"><thead><tr><th>Indice</th><th>Compativeis</th><th>Proximos</th><th>Divergentes</th><th>Total</th><th>% Compativel</th></tr></thead><tbody>';
+        const sortedIndices = Object.entries(indexCount).sort((a,b) => (b[1].exact + b[1].close) - (a[1].exact + a[1].close));
+        for (const [nome, counts] of sortedIndices) {
+            const pctCompat = ((counts.exact + counts.close) / counts.total * 100).toFixed(1);
+            resumoHTML += `<tr>
+                <td><strong>${escapeHtml(nome)}</strong></td>
+                <td style="color:#00e676;">${counts.exact}</td>
+                <td style="color:#ffab00;">${counts.close}</td>
+                <td style="color:#ff5252;">${counts.no}</td>
+                <td>${counts.total}</td>
+                <td><strong>${pctCompat}%</strong></td></tr>`;
+        }
+        resumoHTML += '</tbody></table>';
+        document.getElementById('batchResumoContent').innerHTML = resumoHTML;
+
+        document.getElementById('statusBar').textContent = `Analise em lote concluida - ${data.length} parcelas analisadas`;
+    }
+
+    // ==================== EXPORT ====================
+
+    function exportCSV() {
+        if (!batchResultsData.length) return;
+        const headers = ['Contrato','Unidade','Cliente','Empreendimento','Parcela','Dt Vencimento','Dt Recebimento',
+            'Valor Original','Valor Pago','% Aplicado','Indice Identificado','Defasagem (meses)','% Calculado','Diferenca %','Status'];
+        let csv = '﻿' + headers.join(';') + '\n';
+        for (const r of batchResultsData) {
+            const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+            csv += [r.id, r.unidade, r.cliente, r.empreendimento, r.parcela, r.dataVenc, r.dataReceb,
+                r.valorOriginal.toFixed(2).replace('.',','),
+                r.valorPago.toFixed(2).replace('.',','),
+                r.percentual.toFixed(4).replace('.',','),
+                r.indiceIdentificado, r.lag,
+                (r.correcaoCalculada || 0).toFixed(4).replace('.',','),
+                (r.diferenca || 0).toFixed(4).replace('.',','), st
+            ].join(';') + '\n';
+        }
+        downloadFile(csv, 'analise_indices.csv', 'text/csv;charset=utf-8');
+    }
+
+    function exportXLSX() {
+        if (!batchResultsData.length) return;
+        const wsData = [['Contrato','Unidade','Cliente','Empreendimento','Parcela','Dt Vencimento','Dt Recebimento',
+            'Valor Original','Valor Pago','% Aplicado','Indice Identificado','Defasagem (meses)','% Calculado','Diferenca %','Status']];
+        for (const r of batchResultsData) {
+            const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+            wsData.push([r.id, r.unidade, r.cliente, r.empreendimento, r.parcela, r.dataVenc, r.dataReceb,
+                r.valorOriginal, r.valorPago, r.percentual, r.indiceIdentificado, r.lag, r.correcaoCalculada || 0, r.diferenca || 0, st]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Analise');
+        XLSX.writeFile(wb, 'analise_indices.xlsx');
+    }
+
+    function downloadFile(content, filename, type) {
+        const blob = new Blob([content], { type });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    // ==================== INDICES TABLE ====================
+
     async function loadIndicesTable() {
         const now = new Date();
         const endDate = dateToStr(now);
@@ -675,7 +1285,7 @@
 
         let tableHTML = '<table class="results-table"><thead><tr><th>Indice</th><th>Codigo SGS</th><th>Descricao</th><th>Ultimos Valores</th></tr></thead><tbody>';
 
-        const promises = INDICES_CONFIG.filter(i => i.fonte === 'BCB').map(async (idx) => {
+        const promises = INDICES_CONFIG.map(async (idx) => {
             const data = await fetchBCBSeries(idx.codigo, startDate, endDate);
             let lastValues = '-';
             if (data && data.length > 0) {
@@ -686,18 +1296,10 @@
         });
 
         const results = await Promise.all(promises);
-
         for (const r of results) {
-            tableHTML += `
-                <tr>
-                    <td><strong>${r.nome}</strong></td>
-                    <td>${r.codigo}</td>
-                    <td>${r.descricao}</td>
-                    <td style="font-size:0.82em;">${r.lastValues}</td>
-                </tr>
-            `;
+            tableHTML += `<tr><td><strong>${r.nome}</strong></td><td>${r.codigo}</td><td>${r.descricao}</td>
+                <td style="font-size:0.82em;">${r.lastValues}</td></tr>`;
         }
-
         tableHTML += '</tbody></table>';
         document.getElementById('indicesDisponiveis').innerHTML = tableHTML;
         document.getElementById('statusBar').textContent = `Dados atualizados em ${new Date().toLocaleTimeString('pt-BR')} via API do Banco Central do Brasil (SGS)`;
