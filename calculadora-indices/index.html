@@ -149,6 +149,22 @@
             padding: 14px 18px; border-radius: 0 8px 8px 0;
             margin: 16px 0; font-size: 0.9em; line-height: 1.6;
         }
+        .habite-box {
+            background: rgba(0,107,110,0.05);
+            border: 1px solid rgba(0,107,110,0.18);
+            border-radius: 10px;
+            padding: 16px 18px;
+            margin: 18px 0;
+        }
+        .habite-toggle {
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; color: var(--neo-teal-light);
+            font-size: 0.92em; font-weight: 600;
+        }
+        .habite-toggle input[type="checkbox"] {
+            width: 18px; height: 18px; cursor: pointer;
+            accent-color: var(--neo-teal); padding: 0;
+        }
         .loading { text-align: center; padding: 40px; color: var(--neo-gray); }
         .spinner {
             display: inline-block; width: 30px; height: 30px;
@@ -343,6 +359,31 @@
                     <br><br>
                     <span class="example-link" onclick="loadExample()">Carregar exemplo de calculo</span>
                 </div>
+
+                <div class="habite-box">
+                    <label class="habite-toggle">
+                        <input type="checkbox" id="temHabiteSe" onchange="toggleHabiteSe()">
+                        <span>Existe habite-se? (aplica juros contratuais mensais sobre o indice)</span>
+                    </label>
+                    <div id="habiteFields" style="display:none;">
+                        <div class="info-box" style="margin-top:14px;">
+                            Apos o habite-se, muitos contratos passam a corrigir o saldo pelo indice (IPCA/IGP-M)
+                            <strong>somado a juros contratuais mensais</strong> (tipicamente 0,5% a 1% a.m., capitalizados).
+                            Informe a data do habite-se e o percentual de juros para que o sistema some ao indice encontrado.
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Data do Habite-se</label>
+                                <input type="month" id="dataHabiteSe">
+                            </div>
+                            <div class="form-group">
+                                <label>Juros Contratual Mensal (% a.m.)</label>
+                                <input type="text" id="jurosMensal" placeholder="Ex: 1,00" oninput="formatPercentInput(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn" id="btnCalcular" onclick="calcular()">Identificar Indice Aplicado</button>
             </div>
 
@@ -507,6 +548,27 @@
         return parseFloat(String(str).replace(/\./g, '').replace(',', '.'));
     }
 
+    function formatPercentInput(input) {
+        let v = input.value.replace(/[^\d,]/g, '');
+        input.value = v;
+    }
+
+    function parsePercentInput(str) {
+        if (!str) return 0;
+        return parseFloat(String(str).replace(',', '.')) || 0;
+    }
+
+    function toggleHabiteSe() {
+        const checked = document.getElementById('temHabiteSe').checked;
+        document.getElementById('habiteFields').style.display = checked ? 'block' : 'none';
+    }
+
+    function getMonthsBetween(start, end) {
+        const [sy, sm] = start.split('-').map(Number);
+        const [ey, em] = end.split('-').map(Number);
+        return (ey - sy) * 12 + (em - sm);
+    }
+
     function formatPercent(val) {
         if (isNaN(val)) return '-';
         return val.toFixed(4).replace('.', ',') + '%';
@@ -651,6 +713,24 @@
             return;
         }
 
+        // Habite-se / juros contratuais
+        const temHabiteSe = document.getElementById('temHabiteSe').checked;
+        const jurosMensal = temHabiteSe ? parsePercentInput(document.getElementById('jurosMensal').value) : 0;
+        const dataHabiteSe = document.getElementById('dataHabiteSe').value;
+
+        if (temHabiteSe && jurosMensal <= 0) {
+            alert('Informe o percentual de juros contratual mensal (maior que zero) ou desmarque a opcao de habite-se.');
+            return;
+        }
+
+        // Numero de meses sobre os quais incidem juros (do habite-se ou da data base ate a correcao)
+        let mesesJuros = 0;
+        if (temHabiteSe && jurosMensal > 0) {
+            const inicioJuros = (dataHabiteSe && dataHabiteSe > dataBase) ? dataHabiteSe : dataBase;
+            mesesJuros = Math.max(0, getMonthsBetween(inicioJuros, dataCorrecao));
+        }
+        const fatorJuros = Math.pow(1 + jurosMensal / 100, mesesJuros);
+
         calculating = true;
         const btn = document.getElementById('btnCalcular');
         btn.disabled = true;
@@ -666,18 +746,24 @@
                 if (!idx.monthlyData || Object.keys(idx.monthlyData).length === 0) continue;
                 for (let lag = 0; lag <= 2; lag++) {
                     const result = calcAccumulatedIndex(idx.monthlyData, dataBase, dataCorrecao, lag);
-                    const diff = Math.abs(result.percentChange - percentualAplicado);
+                    // Combina indice + juros contratuais (capitalizados) quando ha habite-se
+                    const fatorTotal = (1 + result.percentChange / 100) * fatorJuros;
+                    const percentTotal = (fatorTotal - 1) * 100;
+                    const diff = Math.abs(percentTotal - percentualAplicado);
                     let status = diff <= 0.05 ? 'exact' : diff <= 0.3 ? 'close' : 'no';
                     resultados.push({
                         nome, descricao: idx.descricao, lag,
-                        percentChange: result.percentChange,
-                        valorCalculado: valorOriginal * (1 + result.percentChange / 100),
+                        percentIndice: result.percentChange,
+                        percentJuros: temHabiteSe ? (fatorJuros - 1) * 100 : 0,
+                        percentChange: percentTotal,
+                        valorCalculado: valorOriginal * fatorTotal,
                         diff, status, missingMonths: result.missingMonths, monthsUsed: result.monthsUsed
                     });
                 }
             }
             resultados.sort((a, b) => a.diff - b.diff);
-            displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao);
+            displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao,
+                { temHabiteSe, jurosMensal, mesesJuros, fatorJuros });
         } catch (e) {
             console.error(e);
             document.getElementById('statusBar').innerHTML = '<span class="error">Erro ao buscar dados. Verifique sua conexao.</span>';
@@ -687,12 +773,18 @@
         btn.textContent = 'Identificar Indice Aplicado';
     }
 
-    function displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao) {
+    function displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao, habiteInfo) {
+        habiteInfo = habiteInfo || { temHabiteSe: false, jurosMensal: 0, mesesJuros: 0, fatorJuros: 1 };
         document.getElementById('resultados').style.display = 'block';
         const best = resultados[0];
         const sb = document.getElementById('summaryBox');
 
         const diffVal = valorCorrigido - valorOriginal;
+        const habiteRow = habiteInfo.temHabiteSe ? `
+                        <tr style="border-top:1px solid rgba(0,107,110,0.15);">
+                            <td style="padding:6px 6px 3px; color:var(--neo-gray-light);">Habite-se (juros ${habiteInfo.jurosMensal.toString().replace('.',',')}% a.m. x ${habiteInfo.mesesJuros} mes(es)):</td>
+                            <td style="padding:6px 6px 3px; text-align:right;"><strong style="color:#c8a000;">+${formatPercent((habiteInfo.fatorJuros - 1) * 100)}</strong></td></tr>
+                        <tr><td style="padding:3px 6px; color:var(--neo-gray);font-size:0.92em;">(somado ao indice abaixo)</td><td></td></tr>` : '';
         const calcDetailHTML = `
             <div style="text-align:left; max-width:600px; margin:12px auto 0;">
                 <div style="background:rgba(0,107,110,0.08); border-radius:8px; padding:12px; font-size:0.88em;">
@@ -703,6 +795,7 @@
                             <td style="padding:3px 6px; text-align:right;"><strong>${formatBRL(valorCorrigido)}</strong></td></tr>
                         <tr><td style="padding:3px 6px; color:var(--neo-gray-light);">Diferenca:</td>
                             <td style="padding:3px 6px; text-align:right;"><strong style="color:${diffVal >= 0 ? '#00b478' : '#cc4444'};">${diffVal >= 0 ? '+' : ''}${formatBRL(diffVal)}</strong></td></tr>
+                        ${habiteRow}
                         <tr style="border-top:1px solid rgba(0,107,110,0.15);">
                             <td style="padding:6px 6px 3px; color:var(--neo-teal-light);">% aplicado:</td>
                             <td style="padding:6px 6px 3px; text-align:right;"><strong style="color:var(--neo-teal-light);">${formatPercent(percentualAplicado)}</strong></td></tr>
@@ -710,20 +803,24 @@
                 </div>
             </div>`;
 
+        const composicaoTxt = (item) => habiteInfo.temHabiteSe
+            ? ` (indice ${formatPercent(item.percentIndice)} + juros ${formatPercent(item.percentJuros)})`
+            : '';
+
         if (best && best.status === 'exact') {
             sb.style.display = 'block';
             sb.style.borderColor = 'rgba(0,180,120,0.2)'; sb.style.background = 'rgba(0,180,120,0.06)';
-            sb.innerHTML = `<h3>Indice Identificado: ${best.nome}</h3>
-                <p>O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
-                apresenta correcao de <strong>${formatPercent(best.percentChange)}</strong>,
+            sb.innerHTML = `<h3>Indice Identificado: ${best.nome}${habiteInfo.temHabiteSe ? ' + Juros Habite-se' : ''}</h3>
+                <p>O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>${composicaoTxt(best)}
+                resulta em correcao de <strong>${formatPercent(best.percentChange)}</strong>,
                 compativel com o percentual aplicado de <strong>${formatPercent(percentualAplicado)}</strong>.
                 <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong></p>
                 ${calcDetailHTML}`;
         } else if (best && best.status === 'close') {
             sb.style.display = 'block';
             sb.style.borderColor = 'rgba(200,160,0,0.3)'; sb.style.background = 'rgba(200,160,0,0.06)';
-            sb.innerHTML = `<h3 style="color:#c8a000;">Indice Mais Proximo: ${best.nome}</h3>
-                <p>O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
+            sb.innerHTML = `<h3 style="color:#c8a000;">Indice Mais Proximo: ${best.nome}${habiteInfo.temHabiteSe ? ' + Juros Habite-se' : ''}</h3>
+                <p>O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>${composicaoTxt(best)}
                 (${formatPercent(best.percentChange)}), diferenca de <strong>${formatPercent(best.diff)}</strong>
                 em relacao ao percentual aplicado (${formatPercent(percentualAplicado)}).
                 <br>Pode haver juros adicionais ou outro componente na correcao.</p>
@@ -778,23 +875,33 @@
             sb.innerHTML = diagHTML;
         }
 
+        const habiteHeader = habiteInfo.temHabiteSe
+            ? '<th>Indice</th><th>Juros Habite-se</th><th>Total (Ind.+Juros)</th>'
+            : '<th>Correcao Calc.</th>';
+        const habiteBanner = habiteInfo.temHabiteSe
+            ? ` | <strong style="color:#c8a000;">Juros habite-se:</strong> ${habiteInfo.jurosMensal.toString().replace('.',',')}% a.m. x ${habiteInfo.mesesJuros} mes(es) = +${formatPercent((habiteInfo.fatorJuros - 1) * 100)}`
+            : '';
+
         let rankingHTML = `<div class="info-box">
             <strong>Percentual aplicado:</strong> ${formatPercent(percentualAplicado)} |
             <strong>Periodo:</strong> ${dataBase} a ${dataCorrecao} |
             <strong>Valor original:</strong> ${formatBRL(valorOriginal)} |
-            <strong>Valor corrigido:</strong> ${formatBRL(valorCorrigido)}
+            <strong>Valor corrigido:</strong> ${formatBRL(valorCorrigido)}${habiteBanner}
             </div><table class="results-table"><thead><tr>
-            <th>#</th><th>Indice</th><th>Defasagem</th><th>Correcao Calc.</th><th>Valor Corrigido Calc.</th><th>Diferenca</th><th>Status</th>
+            <th>#</th><th>Indice</th><th>Defasagem</th>${habiteHeader}<th>Valor Corrigido Calc.</th><th>Diferenca</th><th>Status</th>
             </tr></thead><tbody>`;
 
         resultados.slice(0, 30).forEach((r, i) => {
             const rc = r.status === 'exact' ? 'highlight-row' : '';
             const bc = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
             const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+            const correcaoCols = habiteInfo.temHabiteSe
+                ? `<td>${formatPercent(r.percentIndice)}</td><td style="color:#c8a000;">+${formatPercent(r.percentJuros)}</td><td><strong>${formatPercent(r.percentChange)}</strong></td>`
+                : `<td>${formatPercent(r.percentChange)}</td>`;
             rankingHTML += `<tr class="${rc}"><td>${i+1}</td>
                 <td><strong>${r.nome}</strong><br><small style="color:var(--neo-gray-dark)">${r.descricao}</small></td>
                 <td><span class="badge badge-lag">${r.lag} mes(es)</span></td>
-                <td>${formatPercent(r.percentChange)}</td><td>${formatBRL(r.valorCalculado)}</td>
+                ${correcaoCols}<td>${formatBRL(r.valorCalculado)}</td>
                 <td>${formatPercent(r.diff)}</td><td><span class="badge ${bc}">${st}</span></td></tr>`;
         });
         rankingHTML += '</tbody></table>';
