@@ -3,35 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Indices de Correcao - Contratos Imobiliarios</title>
+    <title>Neo Service - Calculadora de Indices de Correcao</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
+        :root {
+            --neo-teal: #006B6E;
+            --neo-teal-light: #008B8F;
+            --neo-teal-dark: #004D50;
+            --neo-teal-bg: rgba(0,107,110,0.12);
+            --neo-teal-bg2: rgba(0,107,110,0.06);
+            --neo-gray: #888888;
+            --neo-gray-dark: #666666;
+            --neo-gray-light: #aaaaaa;
+            --neo-bg-dark: #0a1a1a;
+            --neo-bg-mid: #0f2a2a;
+            --neo-bg-light: #133333;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: linear-gradient(135deg, var(--neo-bg-dark), var(--neo-bg-mid), var(--neo-bg-light));
             min-height: 100vh;
             color: #e0e0e0;
             padding: 20px;
         }
         .container { max-width: 1200px; margin: 0 auto; }
+
+        /* Header / Logo */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .logo-svg { height: 54px; }
         h1 {
             text-align: center;
-            font-size: 1.8em;
-            margin-bottom: 8px;
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 1.6em;
+            margin-bottom: 6px;
+            color: var(--neo-teal-light);
+            letter-spacing: 1px;
         }
         .subtitle {
             text-align: center;
-            color: #888;
-            margin-bottom: 30px;
-            font-size: 0.95em;
+            color: var(--neo-gray);
+            margin-bottom: 0;
+            font-size: 0.92em;
+            letter-spacing: 0.5px;
         }
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neo-teal), transparent);
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
         .card {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,107,110,0.04);
+            border: 1px solid rgba(0,107,110,0.15);
             border-radius: 16px;
             padding: 28px;
             margin-bottom: 24px;
@@ -40,8 +74,8 @@
         .card h2 {
             font-size: 1.2em;
             margin-bottom: 20px;
-            color: #3a7bd5;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: var(--neo-teal-light);
+            border-bottom: 1px solid rgba(0,107,110,0.2);
             padding-bottom: 10px;
         }
         .form-row {
@@ -51,236 +85,226 @@
             margin-bottom: 16px;
         }
         .form-group { display: flex; flex-direction: column; }
-        label { font-size: 0.85em; color: #aaa; margin-bottom: 6px; font-weight: 500; }
+        label { font-size: 0.85em; color: var(--neo-gray-light); margin-bottom: 6px; font-weight: 500; }
         input, select {
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,107,110,0.08);
+            border: 1px solid rgba(0,107,110,0.2);
             border-radius: 8px;
             padding: 12px 14px;
             color: #fff;
             font-size: 1em;
             transition: border-color 0.3s;
         }
-        input:focus, select:focus { outline: none; border-color: #3a7bd5; }
-        select option { background: #1a1a2e; color: #fff; }
+        input:focus, select:focus { outline: none; border-color: var(--neo-teal-light); }
+        select option { background: var(--neo-bg-dark); color: #fff; }
+
         .btn {
-            background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+            background: linear-gradient(135deg, var(--neo-teal-dark), var(--neo-teal-light));
             color: #fff; border: none; border-radius: 10px;
             padding: 14px 36px; font-size: 1.05em; font-weight: 600;
             cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
             display: block; margin: 20px auto 0;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(58,123,213,0.4); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,107,110,0.4); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c3483, #8e44ad);
-        }
-        .btn-secondary:hover { box-shadow: 0 6px 20px rgba(142,68,173,0.4); }
+        .btn-secondary { background: linear-gradient(135deg, #3a5a5a, var(--neo-teal)); }
+        .btn-secondary:hover { box-shadow: 0 6px 20px rgba(0,107,110,0.4); }
         .btn-export {
-            background: linear-gradient(135deg, #1e8449, #27ae60);
+            background: linear-gradient(135deg, var(--neo-teal-dark), var(--neo-teal));
             padding: 10px 24px; font-size: 0.9em;
             display: inline-block; margin: 10px 5px;
         }
-        .btn-export:hover { box-shadow: 0 6px 20px rgba(39,174,96,0.4); }
+        .btn-export:hover { box-shadow: 0 6px 20px rgba(0,107,110,0.4); }
+
         .results-table {
             width: 100%; border-collapse: collapse; margin-top: 16px;
             font-size: 0.85em;
         }
         .results-table th {
-            background: rgba(58,123,213,0.2);
+            background: var(--neo-teal-bg);
             padding: 10px 8px; text-align: left;
-            font-size: 0.82em; color: #7eb8ff;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.82em; color: var(--neo-teal-light);
+            border-bottom: 1px solid rgba(0,107,110,0.2);
             position: sticky; top: 0;
         }
         .results-table td {
             padding: 8px; font-size: 0.85em;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(0,107,110,0.08);
         }
-        .results-table tr:hover { background: rgba(255,255,255,0.03); }
+        .results-table tr:hover { background: rgba(0,107,110,0.05); }
+
         .badge {
             display: inline-block; padding: 3px 10px;
             border-radius: 12px; font-size: 0.78em; font-weight: 600;
         }
-        .badge-exact { background: rgba(0,230,118,0.2); color: #00e676; border: 1px solid rgba(0,230,118,0.3); }
-        .badge-close { background: rgba(255,171,0,0.2); color: #ffab00; border: 1px solid rgba(255,171,0,0.3); }
+        .badge-exact { background: rgba(0,180,120,0.2); color: #00b478; border: 1px solid rgba(0,180,120,0.3); }
+        .badge-close { background: rgba(200,160,0,0.2); color: #c8a000; border: 1px solid rgba(200,160,0,0.3); }
         .badge-no { background: rgba(136,136,136,0.2); color: #888; border: 1px solid rgba(136,136,136,0.3); }
-        .badge-lag { background: rgba(58,123,213,0.2); color: #7eb8ff; border: 1px solid rgba(58,123,213,0.3); }
-        .highlight-row { background: rgba(0,230,118,0.08) !important; }
+        .badge-lag { background: var(--neo-teal-bg); color: var(--neo-teal-light); border: 1px solid rgba(0,107,110,0.3); }
+        .highlight-row { background: rgba(0,180,120,0.06) !important; }
+
         .info-box {
-            background: rgba(58,123,213,0.1);
-            border-left: 4px solid #3a7bd5;
+            background: var(--neo-teal-bg2);
+            border-left: 4px solid var(--neo-teal);
             padding: 14px 18px; border-radius: 0 8px 8px 0;
             margin: 16px 0; font-size: 0.9em; line-height: 1.6;
         }
-        .loading { text-align: center; padding: 40px; color: #888; }
+        .loading { text-align: center; padding: 40px; color: var(--neo-gray); }
         .spinner {
             display: inline-block; width: 30px; height: 30px;
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: #3a7bd5; border-radius: 50%;
+            border: 3px solid rgba(0,107,110,0.15);
+            border-top-color: var(--neo-teal-light); border-radius: 50%;
             animation: spin 0.8s linear infinite; margin-bottom: 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .status-bar { text-align: center; padding: 8px; font-size: 0.82em; color: #666; }
-        .error { color: #ff5252; }
+        .status-bar { text-align: center; padding: 8px; font-size: 0.82em; color: var(--neo-gray-dark); }
+        .error { color: #cc4444; }
         .example-link {
-            color: #3a7bd5; cursor: pointer; text-decoration: underline; font-size: 0.85em;
+            color: var(--neo-teal-light); cursor: pointer; text-decoration: underline; font-size: 0.85em;
         }
-        .example-link:hover { color: #00d2ff; }
+        .example-link:hover { color: #00aaae; }
+
         .summary-box {
-            background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.2);
+            background: rgba(0,180,120,0.06); border: 1px solid rgba(0,180,120,0.2);
             border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: center;
         }
-        .summary-box h3 { color: #00e676; margin-bottom: 8px; font-size: 1.3em; }
+        .summary-box h3 { color: #00b478; margin-bottom: 8px; font-size: 1.3em; }
         .summary-box p { color: #ccc; font-size: 0.95em; line-height: 1.6; }
+
         .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
         .tab {
-            padding: 10px 20px; background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 20px; background: rgba(0,107,110,0.05);
+            border: 1px solid rgba(0,107,110,0.15);
             border-radius: 8px 8px 0 0; cursor: pointer;
-            color: #888; font-size: 0.9em; transition: all 0.3s;
+            color: var(--neo-gray); font-size: 0.9em; transition: all 0.3s;
         }
-        .tab.active { background: rgba(58,123,213,0.2); color: #7eb8ff; border-bottom-color: transparent; }
+        .tab.active { background: var(--neo-teal-bg); color: var(--neo-teal-light); border-bottom-color: transparent; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* Upload area */
         .upload-area {
-            border: 2px dashed rgba(58,123,213,0.4);
-            border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-            position: relative;
-            margin-bottom: 16px;
+            border: 2px dashed rgba(0,107,110,0.4);
+            border-radius: 16px; padding: 40px 20px;
+            text-align: center; cursor: pointer;
+            transition: all 0.3s; position: relative; margin-bottom: 16px;
         }
         .upload-area:hover, .upload-area.dragover {
-            border-color: #3a7bd5;
-            background: rgba(58,123,213,0.08);
+            border-color: var(--neo-teal-light);
+            background: rgba(0,107,110,0.08);
         }
-        .upload-area .upload-icon {
-            font-size: 3em;
-            margin-bottom: 12px;
-            display: block;
-            color: #3a7bd5;
-        }
-        .upload-area p { color: #aaa; font-size: 0.95em; }
-        .upload-area .file-types { color: #666; font-size: 0.8em; margin-top: 8px; }
-        .upload-area input[type="file"] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer;
-        }
-        .file-loaded {
-            background: rgba(0,230,118,0.08);
-            border-color: rgba(0,230,118,0.4);
-        }
-        .file-loaded .upload-icon { color: #00e676; }
+        .upload-area .upload-icon { font-size: 3em; margin-bottom: 12px; display: block; color: var(--neo-teal); }
+        .upload-area p { color: var(--neo-gray-light); font-size: 0.95em; }
+        .upload-area .file-types { color: var(--neo-gray-dark); font-size: 0.8em; margin-top: 8px; }
+        .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .file-loaded { background: rgba(0,180,120,0.06); border-color: rgba(0,180,120,0.4); }
+        .file-loaded .upload-icon { color: #00b478; }
 
-        /* Preview table */
         .preview-container {
-            max-height: 350px;
-            overflow: auto;
-            border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.1);
+            max-height: 350px; overflow: auto;
+            border-radius: 8px; border: 1px solid rgba(0,107,110,0.15);
         }
         .preview-container::-webkit-scrollbar { width: 6px; height: 6px; }
-        .preview-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        .preview-container::-webkit-scrollbar-thumb { background: rgba(0,107,110,0.3); border-radius: 3px; }
 
-        /* Column mapping */
         .mapping-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin: 16px 0;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px; margin: 16px 0;
         }
         .mapping-item {
-            background: rgba(255,255,255,0.04);
-            border-radius: 8px;
-            padding: 12px;
+            background: rgba(0,107,110,0.04); border-radius: 8px; padding: 12px;
         }
-        .mapping-item label { color: #7eb8ff; font-weight: 600; }
+        .mapping-item label { color: var(--neo-teal-light); font-weight: 600; }
 
-        /* Batch results */
         .batch-summary {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin: 20px 0;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; margin: 20px 0;
         }
         .summary-card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
+            background: rgba(0,107,110,0.06); border: 1px solid rgba(0,107,110,0.12);
+            border-radius: 12px; padding: 16px; text-align: center;
         }
         .summary-card .number {
-            font-size: 2em;
-            font-weight: 700;
-            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-size: 2em; font-weight: 700; color: var(--neo-teal-light);
         }
-        .summary-card .label { font-size: 0.8em; color: #888; margin-top: 4px; }
+        .summary-card .label { font-size: 0.8em; color: var(--neo-gray); margin-top: 4px; }
 
         .progress-bar-container {
             width: 100%; height: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 16px 0;
+            background: rgba(0,107,110,0.1);
+            border-radius: 4px; overflow: hidden; margin: 16px 0;
         }
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #3a7bd5, #00d2ff);
-            border-radius: 4px;
-            transition: width 0.3s;
-            width: 0;
+            background: linear-gradient(90deg, var(--neo-teal-dark), var(--neo-teal-light));
+            border-radius: 4px; transition: width 0.3s; width: 0;
         }
 
         .mode-toggle {
-            display: flex;
-            gap: 0;
-            margin-bottom: 24px;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.15);
+            display: flex; gap: 0; margin-bottom: 24px;
+            border-radius: 12px; overflow: hidden;
+            border: 1px solid rgba(0,107,110,0.25);
         }
         .mode-btn {
-            flex: 1;
-            padding: 14px 20px;
-            text-align: center;
-            cursor: pointer;
-            background: rgba(255,255,255,0.04);
-            color: #888;
-            font-size: 0.95em;
-            font-weight: 500;
-            transition: all 0.3s;
-            border: none;
+            flex: 1; padding: 14px 20px; text-align: center;
+            cursor: pointer; background: rgba(0,107,110,0.04);
+            color: var(--neo-gray); font-size: 0.95em; font-weight: 500;
+            transition: all 0.3s; border: none;
         }
         .mode-btn.active {
-            background: linear-gradient(135deg, rgba(58,123,213,0.3), rgba(0,210,255,0.2));
+            background: linear-gradient(135deg, rgba(0,107,110,0.25), rgba(0,139,143,0.15));
             color: #fff;
         }
-        .mode-btn:hover:not(.active) { background: rgba(255,255,255,0.08); }
+        .mode-btn:hover:not(.active) { background: rgba(0,107,110,0.1); }
         .mode-section { display: none; }
         .mode-section.active { display: block; }
+        .table-scroll { overflow-x: auto; }
 
-        .table-scroll {
-            overflow-x: auto;
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 16px;
+            color: var(--neo-gray-dark);
+            font-size: 0.78em;
+            border-top: 1px solid rgba(0,107,110,0.1);
         }
+        .footer a { color: var(--neo-teal-light); text-decoration: none; }
 
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
-            h1 { font-size: 1.3em; }
+            h1 { font-size: 1.2em; }
             .card { padding: 18px; }
             .batch-summary { grid-template-columns: 1fr 1fr; }
+            .logo-svg { height: 40px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Calculadora de Indices de Correcao</h1>
-        <p class="subtitle">Identifique qual indice foi aplicado em contratos imobiliarios e a defasagem utilizada</p>
+        <!-- Header com Logo Neo Service -->
+        <div class="header">
+            <div class="logo-container">
+                <svg class="logo-svg" viewBox="0 0 360 80" xmlns="http://www.w3.org/2000/svg">
+                    <!-- N -->
+                    <path d="M10,70 L10,18 C10,12 14,8 18,8 C22,8 24,10 26,14 L52,58 L52,18 C52,12 55,8 58,8 C61,8 64,12 64,18 L64,70"
+                          stroke="#006B6E" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- E -->
+                    <path d="M80,14 C80,10 84,8 90,8 L110,8 C116,8 120,10 120,14 C120,14 120,20 116,20 C116,20 108,20 108,24 L108,34 L116,34 C120,34 120,38 120,40 C120,42 120,46 116,46 L108,46 L108,56 C108,60 116,60 116,60 C120,60 120,66 120,66 C120,70 116,72 110,72 L90,72 C84,72 80,70 80,66 Z"
+                          fill="#006B6E"/>
+                    <line x1="92" y1="34" x2="108" y2="34" stroke="#0a1a1a" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="92" y1="46" x2="108" y2="46" stroke="#0a1a1a" stroke-width="4" stroke-linecap="round"/>
+                    <!-- O -->
+                    <circle cx="160" cy="40" r="32" stroke="#006B6E" stroke-width="7" fill="none"/>
+                    <circle cx="175" cy="40" r="4" fill="#006B6E"/>
+                    <!-- SERVICE text -->
+                    <text x="210" y="35" font-family="'Segoe UI', sans-serif" font-size="14" fill="#888888" letter-spacing="8" font-weight="300">S E R V I C E</text>
+                </svg>
+            </div>
+            <h1>Calculadora de Indices de Correcao</h1>
+            <p class="subtitle">Identifique qual indice foi aplicado em contratos imobiliarios e a defasagem utilizada</p>
+            <div class="divider"></div>
+        </div>
 
         <!-- Mode toggle -->
         <div class="mode-toggle">
@@ -344,21 +368,19 @@
         <div id="mode-upload" class="mode-section">
             <div class="card">
                 <h2>Importar Base de Dados</h2>
-
                 <div class="upload-area" id="uploadArea">
                     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)">
                     <span class="upload-icon">&#128196;</span>
                     <p><strong>Clique aqui ou arraste o arquivo</strong></p>
                     <p class="file-types">Formatos aceitos: .xlsx, .xls, .csv</p>
-                    <p id="fileName" style="color:#00e676; margin-top:10px; display:none;"></p>
+                    <p id="fileName" style="color:#00b478; margin-top:10px; display:none;"></p>
                 </div>
-
                 <div id="uploadPreview" style="display:none;">
-                    <h3 style="color:#7eb8ff; font-size:1em; margin-bottom:12px;">Pre-visualizacao dos dados carregados</h3>
+                    <h3 style="color:var(--neo-teal-light); font-size:1em; margin-bottom:12px;">Pre-visualizacao dos dados carregados</h3>
                     <div class="preview-container">
                         <div id="previewTable"></div>
                     </div>
-                    <p id="previewCount" style="font-size:0.82em; color:#888; margin-top:8px;"></p>
+                    <p id="previewCount" style="font-size:0.82em; color:var(--neo-gray); margin-top:8px;"></p>
                 </div>
             </div>
 
@@ -369,42 +391,15 @@
                     O sistema tentara detectar automaticamente, mas voce pode ajustar.
                 </div>
                 <div class="mapping-grid">
-                    <div class="mapping-item">
-                        <label>ID / Contrato</label>
-                        <select id="mapId"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Unidade</label>
-                        <select id="mapUnidade"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Cliente</label>
-                        <select id="mapCliente"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Empreendimento</label>
-                        <select id="mapEmpreendimento"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Parcela</label>
-                        <select id="mapParcela"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Data de Vencimento *</label>
-                        <select id="mapDataVenc"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Data do Recebimento</label>
-                        <select id="mapDataReceb"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Valor Original *</label>
-                        <select id="mapValorOriginal"></select>
-                    </div>
-                    <div class="mapping-item">
-                        <label>Valor Pago / Corrigido *</label>
-                        <select id="mapValorPago"></select>
-                    </div>
+                    <div class="mapping-item"><label>ID / Contrato</label><select id="mapId"></select></div>
+                    <div class="mapping-item"><label>Unidade</label><select id="mapUnidade"></select></div>
+                    <div class="mapping-item"><label>Cliente</label><select id="mapCliente"></select></div>
+                    <div class="mapping-item"><label>Empreendimento</label><select id="mapEmpreendimento"></select></div>
+                    <div class="mapping-item"><label>Parcela</label><select id="mapParcela"></select></div>
+                    <div class="mapping-item"><label>Data de Vencimento *</label><select id="mapDataVenc"></select></div>
+                    <div class="mapping-item"><label>Data do Recebimento</label><select id="mapDataReceb"></select></div>
+                    <div class="mapping-item"><label>Valor Original *</label><select id="mapValorOriginal"></select></div>
+                    <div class="mapping-item"><label>Valor Pago / Corrigido *</label><select id="mapValorPago"></select></div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -427,47 +422,35 @@
             <div id="batchProgress" style="display:none;">
                 <div class="card">
                     <h2>Processando...</h2>
-                    <p id="progressText" style="text-align:center; color:#aaa; margin-bottom:8px;">Preparando analise...</p>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" id="progressBar"></div>
-                    </div>
+                    <p id="progressText" style="text-align:center; color:var(--neo-gray-light); margin-bottom:8px;">Preparando analise...</p>
+                    <div class="progress-bar-container"><div class="progress-bar" id="progressBar"></div></div>
                 </div>
             </div>
 
             <div id="batchResults" style="display:none;">
                 <div class="card">
                     <h2>Resultado da Analise em Lote</h2>
-
                     <div class="batch-summary" id="batchSummary"></div>
-
                     <div style="margin:16px 0; text-align:center;">
                         <button class="btn btn-export" onclick="exportCSV()">Exportar CSV</button>
                         <button class="btn btn-export" onclick="exportXLSX()">Exportar Excel</button>
                     </div>
-
                     <div class="tabs">
                         <div class="tab active" onclick="switchTab('batchTable', this)">Tabela Completa</div>
                         <div class="tab" onclick="switchTab('batchAgrupado', this)">Agrupado por Contrato</div>
                         <div class="tab" onclick="switchTab('batchResumo', this)">Resumo de Indices</div>
                     </div>
-
-                    <div id="tab-batchTable" class="tab-content active">
-                        <div class="table-scroll" id="batchTableContent"></div>
-                    </div>
-                    <div id="tab-batchAgrupado" class="tab-content">
-                        <div id="batchAgrupadoContent"></div>
-                    </div>
-                    <div id="tab-batchResumo" class="tab-content">
-                        <div id="batchResumoContent"></div>
-                    </div>
+                    <div id="tab-batchTable" class="tab-content active"><div class="table-scroll" id="batchTableContent"></div></div>
+                    <div id="tab-batchAgrupado" class="tab-content"><div id="batchAgrupadoContent"></div></div>
+                    <div id="tab-batchResumo" class="tab-content"><div id="batchResumoContent"></div></div>
                 </div>
             </div>
         </div>
 
-        <!-- Tabela de indices (sempre visivel) -->
+        <!-- Tabela de indices -->
         <div class="card">
             <h2>Tabela de Indices Disponiveis</h2>
-            <p style="font-size:0.85em; color:#888; margin-bottom:12px;">
+            <p style="font-size:0.85em; color:var(--neo-gray); margin-bottom:12px;">
                 Indices consultados via API do Banco Central (SGS) e outras fontes oficiais
             </p>
             <div id="indicesDisponiveis">
@@ -476,6 +459,10 @@
         </div>
 
         <div class="status-bar" id="statusBar">Conectando com fontes de dados...</div>
+
+        <div class="footer">
+            Desenvolvido por <a href="#">Neo Service</a> &mdash; Todos os dados sao obtidos via API do Banco Central do Brasil (SGS)
+        </div>
     </div>
 
     <script>
@@ -504,8 +491,6 @@
     let uploadedData = null;
     let uploadedHeaders = [];
     let batchResultsData = [];
-
-    // ==================== UTILITIES ====================
 
     function formatMoney(input) {
         let v = input.value.replace(/\D/g, '');
@@ -538,8 +523,6 @@
         div.textContent = String(str);
         return div.innerHTML;
     }
-
-    // ==================== BCB API ====================
 
     async function fetchBCBSeries(codigo, dataInicio, dataFim) {
         const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${codigo}/dados?formato=json&dataInicial=${dataInicio}&dataFinal=${dataFim}`;
@@ -633,8 +616,6 @@
         }
     }
 
-    // ==================== MODE SWITCHING ====================
-
     function switchMode(mode) {
         document.querySelectorAll('.mode-btn').forEach((b, i) => {
             b.classList.toggle('active', (mode === 'manual' && i === 0) || (mode === 'upload' && i === 1));
@@ -644,19 +625,15 @@
     }
 
     function switchTab(tabName, btn) {
-        const parent = btn ? btn.closest('.card') : document.querySelector('.card');
         if (btn) {
             btn.closest('.tabs').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
         }
-        const card = btn ? btn.closest('.card') : null;
-        const scope = card || document;
-        scope.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        const card = btn ? btn.closest('.card') : document;
+        card.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         const target = document.getElementById('tab-' + tabName);
         if (target) target.classList.add('active');
     }
-
-    // ==================== MANUAL MODE ====================
 
     async function calcular() {
         if (calculating) return;
@@ -703,7 +680,7 @@
             displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao);
         } catch (e) {
             console.error(e);
-            document.getElementById('statusBar').innerHTML = `<span class="error">Erro ao buscar dados. Verifique sua conexao.</span>`;
+            document.getElementById('statusBar').innerHTML = '<span class="error">Erro ao buscar dados. Verifique sua conexao.</span>';
         }
         calculating = false;
         btn.disabled = false;
@@ -713,31 +690,28 @@
     function displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao) {
         document.getElementById('resultados').style.display = 'block';
         const best = resultados[0];
-        const summaryBox = document.getElementById('summaryBox');
+        const sb = document.getElementById('summaryBox');
 
         if (best && best.status === 'exact') {
-            summaryBox.style.display = 'block';
-            summaryBox.style.borderColor = 'rgba(0,230,118,0.2)';
-            summaryBox.style.background = 'rgba(0,230,118,0.08)';
-            summaryBox.innerHTML = `<h3>Indice Identificado: ${best.nome}</h3>
+            sb.style.display = 'block';
+            sb.style.borderColor = 'rgba(0,180,120,0.2)'; sb.style.background = 'rgba(0,180,120,0.06)';
+            sb.innerHTML = `<h3>Indice Identificado: ${best.nome}</h3>
                 <p>O indice <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
                 apresenta correcao de <strong>${formatPercent(best.percentChange)}</strong>,
                 compativel com o percentual aplicado de <strong>${formatPercent(percentualAplicado)}</strong>.
                 <br>Diferenca: apenas <strong>${formatPercent(best.diff)}</strong></p>`;
         } else if (best && best.status === 'close') {
-            summaryBox.style.display = 'block';
-            summaryBox.style.borderColor = 'rgba(255,171,0,0.3)';
-            summaryBox.style.background = 'rgba(255,171,0,0.08)';
-            summaryBox.innerHTML = `<h3 style="color:#ffab00;">Indice Mais Proximo: ${best.nome}</h3>
+            sb.style.display = 'block';
+            sb.style.borderColor = 'rgba(200,160,0,0.3)'; sb.style.background = 'rgba(200,160,0,0.06)';
+            sb.innerHTML = `<h3 style="color:#c8a000;">Indice Mais Proximo: ${best.nome}</h3>
                 <p>O indice mais proximo e <strong>${best.nome}</strong> com defasagem de <strong>${best.lag} mes(es)</strong>
                 (${formatPercent(best.percentChange)}), diferenca de <strong>${formatPercent(best.diff)}</strong>
                 em relacao ao percentual aplicado (${formatPercent(percentualAplicado)}).
                 <br>Pode haver juros adicionais ou outro componente na correcao.</p>`;
         } else {
-            summaryBox.style.display = 'block';
-            summaryBox.style.borderColor = 'rgba(255,82,82,0.3)';
-            summaryBox.style.background = 'rgba(255,82,82,0.08)';
-            summaryBox.innerHTML = `<h3 style="color:#ff5252;">Nenhum Indice Compativel</h3>
+            sb.style.display = 'block';
+            sb.style.borderColor = 'rgba(204,68,68,0.3)'; sb.style.background = 'rgba(204,68,68,0.06)';
+            sb.innerHTML = `<h3 style="color:#cc4444;">Nenhum Indice Compativel</h3>
                 <p>Nenhum indice padrao corresponde ao percentual de ${formatPercent(percentualAplicado)}.
                 O contrato pode usar um indice customizado, composto, ou incluir juros remuneratorios.</p>`;
         }
@@ -747,36 +721,29 @@
             <strong>Periodo:</strong> ${dataBase} a ${dataCorrecao} |
             <strong>Valor original:</strong> ${formatBRL(valorOriginal)} |
             <strong>Valor corrigido:</strong> ${formatBRL(valorCorrigido)}
-            </div>
-            <table class="results-table"><thead><tr>
+            </div><table class="results-table"><thead><tr>
             <th>#</th><th>Indice</th><th>Defasagem</th><th>Correcao Calc.</th><th>Valor Corrigido Calc.</th><th>Diferenca</th><th>Status</th>
             </tr></thead><tbody>`;
 
         resultados.slice(0, 30).forEach((r, i) => {
-            const rowClass = r.status === 'exact' ? 'highlight-row' : '';
-            const badgeClass = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
-            const statusText = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-            rankingHTML += `<tr class="${rowClass}">
-                <td>${i+1}</td>
-                <td><strong>${r.nome}</strong><br><small style="color:#666">${r.descricao}</small></td>
+            const rc = r.status === 'exact' ? 'highlight-row' : '';
+            const bc = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
+            const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
+            rankingHTML += `<tr class="${rc}"><td>${i+1}</td>
+                <td><strong>${r.nome}</strong><br><small style="color:var(--neo-gray-dark)">${r.descricao}</small></td>
                 <td><span class="badge badge-lag">${r.lag} mes(es)</span></td>
-                <td>${formatPercent(r.percentChange)}</td>
-                <td>${formatBRL(r.valorCalculado)}</td>
-                <td>${formatPercent(r.diff)}</td>
-                <td><span class="badge ${badgeClass}">${statusText}</span></td></tr>`;
+                <td>${formatPercent(r.percentChange)}</td><td>${formatBRL(r.valorCalculado)}</td>
+                <td>${formatPercent(r.diff)}</td><td><span class="badge ${bc}">${st}</span></td></tr>`;
         });
         rankingHTML += '</tbody></table>';
         document.getElementById('rankingContent').innerHTML = rankingHTML;
 
         const groupedByIndex = {};
-        for (const r of resultados) {
-            if (!groupedByIndex[r.nome]) groupedByIndex[r.nome] = [];
-            groupedByIndex[r.nome].push(r);
-        }
+        for (const r of resultados) { if (!groupedByIndex[r.nome]) groupedByIndex[r.nome] = []; groupedByIndex[r.nome].push(r); }
         let detalhesHTML = '';
         for (const [nome, items] of Object.entries(groupedByIndex)) {
-            detalhesHTML += `<div style="margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;">
-                <h3 style="font-size:1em;color:#7eb8ff;margin-bottom:10px;">${nome}</h3>
+            detalhesHTML += `<div style="margin-bottom:20px;padding:16px;background:rgba(0,107,110,0.04);border-radius:10px;">
+                <h3 style="font-size:1em;color:var(--neo-teal-light);margin-bottom:10px;">${nome}</h3>
                 <table class="results-table"><thead><tr><th>Defasagem</th><th>Correcao</th><th>Valor Calculado</th><th>Diferenca</th><th>Status</th></tr></thead><tbody>`;
             for (const item of items.sort((a, b) => a.lag - b.lag)) {
                 const bc = item.status === 'exact' ? 'badge-exact' : item.status === 'close' ? 'badge-close' : 'badge-no';
@@ -799,68 +766,48 @@
         document.getElementById('dataCorrecao').value = '2024-01';
     }
 
-    // ==================== UPLOAD MODE ====================
+    // ==================== UPLOAD ====================
 
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         document.getElementById('fileName').textContent = file.name;
         document.getElementById('fileName').style.display = 'block';
         document.getElementById('uploadArea').classList.add('file-loaded');
-
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
                 const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
                 const ws = wb.Sheets[wb.SheetNames[0]];
                 const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-                if (json.length === 0) {
-                    alert('A planilha esta vazia.');
-                    return;
-                }
-
+                if (json.length === 0) { alert('A planilha esta vazia.'); return; }
                 uploadedHeaders = Object.keys(json[0]);
                 uploadedData = json;
-
                 showPreview(json);
                 setupMapping(uploadedHeaders);
                 document.getElementById('mappingCard').style.display = 'block';
-            } catch (err) {
-                console.error(err);
-                alert('Erro ao ler arquivo: ' + err.message);
-            }
+            } catch (err) { console.error(err); alert('Erro ao ler arquivo: ' + err.message); }
         };
         reader.readAsArrayBuffer(file);
     }
 
-    // Drag and drop
     const uploadArea = document.getElementById('uploadArea');
     uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
     uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
     uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('dragover');
+        e.preventDefault(); uploadArea.classList.remove('dragover');
         const file = e.dataTransfer.files[0];
-        if (file) {
-            document.getElementById('fileInput').files = e.dataTransfer.files;
-            handleFileUpload({ target: { files: [file] } });
-        }
+        if (file) { document.getElementById('fileInput').files = e.dataTransfer.files; handleFileUpload({ target: { files: [file] } }); }
     });
 
     function showPreview(data) {
         const headers = Object.keys(data[0]);
         const previewRows = data.slice(0, 8);
-
-        let html = '<table class="results-table"><thead><tr>';
-        html += '<th>#</th>';
+        let html = '<table class="results-table"><thead><tr><th>#</th>';
         headers.forEach(h => { html += `<th>${escapeHtml(h)}</th>`; });
         html += '</tr></thead><tbody>';
-
         previewRows.forEach((row, i) => {
-            html += '<tr>';
-            html += `<td>${i + 1}</td>`;
+            html += `<tr><td>${i+1}</td>`;
             headers.forEach(h => {
                 let val = row[h];
                 if (val instanceof Date) val = val.toLocaleDateString('pt-BR');
@@ -870,7 +817,6 @@
             html += '</tr>';
         });
         html += '</tbody></table>';
-
         document.getElementById('previewTable').innerHTML = html;
         document.getElementById('previewCount').textContent = `Total: ${data.length} linhas carregadas`;
         document.getElementById('uploadPreview').style.display = 'block';
@@ -878,68 +824,45 @@
 
     function setupMapping(headers) {
         const mappings = {
-            mapId: ['id_contrato', 'id', 'contrato', 'cod', 'codigo', 'num'],
-            mapUnidade: ['unidade', 'und', 'unit', 'apt', 'apto', 'lote'],
-            mapCliente: ['cliente', 'nome', 'comprador', 'client', 'name'],
-            mapEmpreendimento: ['empreendimento', 'obra', 'projeto', 'project', 'emp'],
-            mapParcela: ['parcela', 'parc', 'nro_parcela', 'numero_parcela', 'installment'],
-            mapDataVenc: ['dt_venc', 'dt venc', 'vencimento', 'data_vencimento', 'data vencimento', 'due_date', 'dt venc.'],
-            mapDataReceb: ['data_recebimento', 'data do recebimento', 'dt_receb', 'dt_pagamento', 'data_pagamento', 'data pagamento', 'payment_date'],
-            mapValorOriginal: ['valor_original', 'valor original', 'vl_original', 'valor', 'value', 'vl_contrato'],
-            mapValorPago: ['valor_pago', 'valor pago', 'vl_pago', 'valor_corrigido', 'valor corrigido', 'paid', 'vl_recebido']
+            mapId: ['id_contrato','id','contrato','cod','codigo','num'],
+            mapUnidade: ['unidade','und','unit','apt','apto','lote'],
+            mapCliente: ['cliente','nome','comprador','client','name'],
+            mapEmpreendimento: ['empreendimento','obra','projeto','project','emp'],
+            mapParcela: ['parcela','parc','nro_parcela','numero_parcela','installment'],
+            mapDataVenc: ['dt_venc','dt venc','vencimento','data_vencimento','data vencimento','due_date','dt venc.'],
+            mapDataReceb: ['data_recebimento','data do recebimento','dt_receb','dt_pagamento','data_pagamento','data pagamento','payment_date'],
+            mapValorOriginal: ['valor_original','valor original','vl_original','valor','value','vl_contrato'],
+            mapValorPago: ['valor_pago','valor pago','vl_pago','valor_corrigido','valor corrigido','paid','vl_recebido']
         };
-
         const lowerHeaders = headers.map(h => h.toLowerCase().trim());
-
         for (const [selectId, keywords] of Object.entries(mappings)) {
             const sel = document.getElementById(selectId);
             sel.innerHTML = '<option value="">-- Nao mapear --</option>';
-            headers.forEach((h, i) => {
-                sel.innerHTML += `<option value="${i}">${escapeHtml(h)}</option>`;
-            });
-
+            headers.forEach((h, i) => { sel.innerHTML += `<option value="${i}">${escapeHtml(h)}</option>`; });
             let bestMatch = -1;
-            for (const kw of keywords) {
-                const idx = lowerHeaders.findIndex(lh => lh.includes(kw));
-                if (idx >= 0) { bestMatch = idx; break; }
-            }
+            for (const kw of keywords) { const idx = lowerHeaders.findIndex(lh => lh.includes(kw)); if (idx >= 0) { bestMatch = idx; break; } }
             if (bestMatch >= 0) sel.value = String(bestMatch);
         }
     }
 
     function getMapping() {
-        const get = (id) => {
-            const val = document.getElementById(id).value;
-            return val !== '' ? parseInt(val) : -1;
-        };
-        return {
-            id: get('mapId'),
-            unidade: get('mapUnidade'),
-            cliente: get('mapCliente'),
-            empreendimento: get('mapEmpreendimento'),
-            parcela: get('mapParcela'),
-            dataVenc: get('mapDataVenc'),
-            dataReceb: get('mapDataReceb'),
-            valorOriginal: get('mapValorOriginal'),
-            valorPago: get('mapValorPago'),
-        };
+        const get = (id) => { const val = document.getElementById(id).value; return val !== '' ? parseInt(val) : -1; };
+        return { id: get('mapId'), unidade: get('mapUnidade'), cliente: get('mapCliente'),
+            empreendimento: get('mapEmpreendimento'), parcela: get('mapParcela'),
+            dataVenc: get('mapDataVenc'), dataReceb: get('mapDataReceb'),
+            valorOriginal: get('mapValorOriginal'), valorPago: get('mapValorPago') };
     }
 
     function parseDateToMonth(val) {
         if (!val) return null;
-        if (val instanceof Date) {
-            return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}`;
-        }
+        if (val instanceof Date) return `${val.getFullYear()}-${String(val.getMonth()+1).padStart(2,'0')}`;
         const s = String(val).trim();
-        // DD/MM/YYYY
         let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-        if (m) return `${m[3]}-${m[2].padStart(2, '0')}`;
-        // YYYY-MM-DD
+        if (m) return `${m[3]}-${m[2].padStart(2,'0')}`;
         m = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-        if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
-        // YYYY-MM
+        if (m) return `${m[1]}-${m[2].padStart(2,'0')}`;
         m = s.match(/^(\d{4})[\/\-](\d{1,2})$/);
-        if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+        if (m) return `${m[1]}-${m[2].padStart(2,'0')}`;
         return null;
     }
 
@@ -949,156 +872,72 @@
     }
 
     async function analisarLote() {
-        if (!uploadedData || uploadedData.length === 0) {
-            alert('Carregue uma planilha primeiro.');
-            return;
-        }
-
+        if (!uploadedData || uploadedData.length === 0) { alert('Carregue uma planilha primeiro.'); return; }
         const mapping = getMapping();
         if (mapping.valorOriginal < 0 || mapping.valorPago < 0 || mapping.dataVenc < 0) {
-            alert('Mapeie pelo menos: Data de Vencimento, Valor Original e Valor Pago.');
-            return;
+            alert('Mapeie pelo menos: Data de Vencimento, Valor Original e Valor Pago.'); return;
         }
-
         const batchDataBase = document.getElementById('batchDataBase').value;
         const tolerancia = parseFloat(document.getElementById('tolerancia').value);
-
         const btn = document.getElementById('btnAnalisarLote');
-        btn.disabled = true;
-        btn.textContent = 'Processando...';
+        btn.disabled = true; btn.textContent = 'Processando...';
         document.getElementById('batchProgress').style.display = 'block';
         document.getElementById('batchResults').style.display = 'none';
-
         await new Promise(r => setTimeout(r, 50));
 
         try {
-            // Find date range from data
-            let minDate = '9999-12';
-            let maxDate = '0000-01';
+            let minDate = '9999-12', maxDate = '0000-01';
             const rows = [];
-
             for (const row of uploadedData) {
                 const valOrig = parseMoney(getFieldValue(row, mapping.valorOriginal));
                 const valPago = parseMoney(getFieldValue(row, mapping.valorPago));
                 const dateVenc = parseDateToMonth(getFieldValue(row, mapping.dataVenc));
                 const dateReceb = mapping.dataReceb >= 0 ? parseDateToMonth(getFieldValue(row, mapping.dataReceb)) : null;
-
                 if (isNaN(valOrig) || isNaN(valPago) || !dateVenc) continue;
-
                 const dataRef = dateReceb || dateVenc;
                 if (dataRef < minDate) minDate = dataRef;
                 if (dataRef > maxDate) maxDate = dataRef;
-
-                rows.push({
-                    id: mapping.id >= 0 ? getFieldValue(row, mapping.id) : '',
-                    unidade: mapping.unidade >= 0 ? getFieldValue(row, mapping.unidade) : '',
-                    cliente: mapping.cliente >= 0 ? getFieldValue(row, mapping.cliente) : '',
-                    empreendimento: mapping.empreendimento >= 0 ? getFieldValue(row, mapping.empreendimento) : '',
-                    parcela: mapping.parcela >= 0 ? getFieldValue(row, mapping.parcela) : '',
-                    dataVenc: dateVenc,
-                    dataReceb: dateReceb || dateVenc,
-                    valorOriginal: valOrig,
-                    valorPago: valPago,
-                    percentual: valOrig !== 0 ? ((valPago / valOrig) - 1) * 100 : 0
-                });
+                rows.push({ id: mapping.id >= 0 ? getFieldValue(row, mapping.id) : '', unidade: mapping.unidade >= 0 ? getFieldValue(row, mapping.unidade) : '',
+                    cliente: mapping.cliente >= 0 ? getFieldValue(row, mapping.cliente) : '', empreendimento: mapping.empreendimento >= 0 ? getFieldValue(row, mapping.empreendimento) : '',
+                    parcela: mapping.parcela >= 0 ? getFieldValue(row, mapping.parcela) : '', dataVenc: dateVenc, dataReceb: dateReceb || dateVenc,
+                    valorOriginal: valOrig, valorPago: valPago, percentual: valOrig !== 0 ? ((valPago / valOrig) - 1) * 100 : 0 });
             }
-
-            if (rows.length === 0) {
-                alert('Nenhuma linha valida encontrada. Verifique o mapeamento de colunas.');
-                btn.disabled = false;
-                btn.textContent = 'Analisar Toda a Base';
-                document.getElementById('batchProgress').style.display = 'none';
-                return;
-            }
+            if (rows.length === 0) { alert('Nenhuma linha valida encontrada.'); btn.disabled = false; btn.textContent = 'Analisar Toda a Base'; document.getElementById('batchProgress').style.display = 'none'; return; }
 
             const startBase = batchDataBase || addMonths(minDate, -1);
-            const endRef = maxDate;
-
             updateProgress(10, 'Buscando indices do Banco Central...');
-            await loadAllIndices(addMonths(startBase, -3), addMonths(endRef, 2));
+            await loadAllIndices(addMonths(startBase, -3), addMonths(maxDate, 2));
             updateProgress(40, 'Indices carregados. Analisando parcelas...');
-
             batchResultsData = [];
             const total = rows.length;
 
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
-                if (i % 10 === 0) {
-                    updateProgress(40 + (i / total) * 55, `Analisando parcela ${i + 1} de ${total}...`);
-                    await new Promise(r => setTimeout(r, 0));
-                }
-
+                if (i % 10 === 0) { updateProgress(40 + (i/total)*55, `Analisando parcela ${i+1} de ${total}...`); await new Promise(r => setTimeout(r, 0)); }
                 const dataBase = batchDataBase || row.dataVenc;
                 const dataCorrecao = row.dataReceb;
-
-                if (Math.abs(row.percentual) < 0.001) {
-                    batchResultsData.push({
-                        ...row,
-                        indiceIdentificado: 'Sem correcao',
-                        lag: '-',
-                        correcaoCalculada: 0,
-                        diferenca: 0,
-                        status: 'exact'
-                    });
-                    continue;
-                }
-
-                if (dataCorrecao <= dataBase) {
-                    batchResultsData.push({
-                        ...row,
-                        indiceIdentificado: 'Periodo invalido',
-                        lag: '-',
-                        correcaoCalculada: 0,
-                        diferenca: 0,
-                        status: 'no'
-                    });
-                    continue;
-                }
-
+                if (Math.abs(row.percentual) < 0.001) { batchResultsData.push({ ...row, indiceIdentificado: 'Sem correcao', lag: '-', correcaoCalculada: 0, diferenca: 0, status: 'exact' }); continue; }
+                if (dataCorrecao <= dataBase) { batchResultsData.push({ ...row, indiceIdentificado: 'Periodo invalido', lag: '-', correcaoCalculada: 0, diferenca: 0, status: 'no' }); continue; }
                 let bestMatch = null;
                 for (const [nome, idx] of Object.entries(indicesData)) {
                     if (!idx.monthlyData || Object.keys(idx.monthlyData).length === 0) continue;
                     for (let lag = 0; lag <= 2; lag++) {
                         const result = calcAccumulatedIndex(idx.monthlyData, dataBase, dataCorrecao, lag);
                         const diff = Math.abs(result.percentChange - row.percentual);
-                        if (!bestMatch || diff < bestMatch.diff) {
-                            bestMatch = { nome, lag, percentChange: result.percentChange, diff };
-                        }
+                        if (!bestMatch || diff < bestMatch.diff) bestMatch = { nome, lag, percentChange: result.percentChange, diff };
                     }
                 }
-
                 if (bestMatch) {
                     let status = bestMatch.diff <= tolerancia * 0.167 ? 'exact' : bestMatch.diff <= tolerancia ? 'close' : 'no';
-                    batchResultsData.push({
-                        ...row,
-                        indiceIdentificado: bestMatch.nome,
-                        lag: bestMatch.lag,
-                        correcaoCalculada: bestMatch.percentChange,
-                        diferenca: bestMatch.diff,
-                        status
-                    });
+                    batchResultsData.push({ ...row, indiceIdentificado: bestMatch.nome, lag: bestMatch.lag, correcaoCalculada: bestMatch.percentChange, diferenca: bestMatch.diff, status });
                 } else {
-                    batchResultsData.push({
-                        ...row,
-                        indiceIdentificado: 'Nao identificado',
-                        lag: '-',
-                        correcaoCalculada: 0,
-                        diferenca: 999,
-                        status: 'no'
-                    });
+                    batchResultsData.push({ ...row, indiceIdentificado: 'Nao identificado', lag: '-', correcaoCalculada: 0, diferenca: 999, status: 'no' });
                 }
             }
-
             updateProgress(100, 'Concluido!');
             displayBatchResults(batchResultsData);
-
-        } catch (e) {
-            console.error(e);
-            alert('Erro na analise: ' + e.message);
-        }
-
-        btn.disabled = false;
-        btn.textContent = 'Analisar Toda a Base';
+        } catch (e) { console.error(e); alert('Erro na analise: ' + e.message); }
+        btn.disabled = false; btn.textContent = 'Analisar Toda a Base';
         document.getElementById('batchProgress').style.display = 'none';
     }
 
@@ -1109,129 +948,79 @@
 
     function displayBatchResults(data) {
         document.getElementById('batchResults').style.display = 'block';
-
-        const total = data.length;
-        const exatos = data.filter(d => d.status === 'exact').length;
-        const proximos = data.filter(d => d.status === 'close').length;
-        const divergentes = data.filter(d => d.status === 'no').length;
-        const comCorrecao = data.filter(d => d.indiceIdentificado !== 'Sem correcao' && d.indiceIdentificado !== 'Periodo invalido').length;
+        const total = data.length, exatos = data.filter(d => d.status === 'exact').length,
+              proximos = data.filter(d => d.status === 'close').length, divergentes = data.filter(d => d.status === 'no').length;
 
         document.getElementById('batchSummary').innerHTML = `
             <div class="summary-card"><div class="number">${total}</div><div class="label">Total de Parcelas</div></div>
-            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#00e676;">${exatos}</div><div class="label">Indices Compativeis</div></div>
-            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#ffab00;">${proximos}</div><div class="label">Indices Proximos</div></div>
-            <div class="summary-card"><div class="number" style="-webkit-text-fill-color:#ff5252;">${divergentes}</div><div class="label">Divergentes</div></div>
-        `;
+            <div class="summary-card"><div class="number" style="color:#00b478;">${exatos}</div><div class="label">Indices Compativeis</div></div>
+            <div class="summary-card"><div class="number" style="color:#c8a000;">${proximos}</div><div class="label">Indices Proximos</div></div>
+            <div class="summary-card"><div class="number" style="color:#cc4444;">${divergentes}</div><div class="label">Divergentes</div></div>`;
 
-        // Full table
         let tableHTML = `<table class="results-table"><thead><tr>
             <th>#</th><th>Contrato</th><th>Unidade</th><th>Cliente</th><th>Parcela</th>
             <th>Dt Venc.</th><th>Dt Receb.</th><th>Valor Original</th><th>Valor Pago</th>
             <th>% Aplicado</th><th>Indice Identificado</th><th>Defasagem</th><th>% Calculado</th>
-            <th>Diferenca</th><th>Status</th>
-            </tr></thead><tbody>`;
-
+            <th>Diferenca</th><th>Status</th></tr></thead><tbody>`;
         data.forEach((r, i) => {
             const bc = r.status === 'exact' ? 'badge-exact' : r.status === 'close' ? 'badge-close' : 'badge-no';
             const st = r.status === 'exact' ? 'OK' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-            const rc = r.status === 'exact' ? 'highlight-row' : '';
-            tableHTML += `<tr class="${rc}">
-                <td>${i+1}</td>
-                <td>${escapeHtml(r.id)}</td>
-                <td>${escapeHtml(r.unidade)}</td>
-                <td>${escapeHtml(r.cliente)}</td>
-                <td>${escapeHtml(r.parcela)}</td>
-                <td>${r.dataVenc}</td>
-                <td>${r.dataReceb}</td>
-                <td>${formatBRL(r.valorOriginal)}</td>
-                <td>${formatBRL(r.valorPago)}</td>
-                <td>${formatPercent(r.percentual)}</td>
-                <td><strong>${escapeHtml(r.indiceIdentificado)}</strong></td>
+            tableHTML += `<tr class="${r.status === 'exact' ? 'highlight-row' : ''}">
+                <td>${i+1}</td><td>${escapeHtml(r.id)}</td><td>${escapeHtml(r.unidade)}</td><td>${escapeHtml(r.cliente)}</td>
+                <td>${escapeHtml(r.parcela)}</td><td>${r.dataVenc}</td><td>${r.dataReceb}</td>
+                <td>${formatBRL(r.valorOriginal)}</td><td>${formatBRL(r.valorPago)}</td>
+                <td>${formatPercent(r.percentual)}</td><td><strong>${escapeHtml(r.indiceIdentificado)}</strong></td>
                 <td>${r.lag !== '-' ? `<span class="badge badge-lag">${r.lag} mes(es)</span>` : '-'}</td>
-                <td>${formatPercent(r.correcaoCalculada)}</td>
-                <td>${formatPercent(r.diferenca)}</td>
+                <td>${formatPercent(r.correcaoCalculada)}</td><td>${formatPercent(r.diferenca)}</td>
                 <td><span class="badge ${bc}">${st}</span></td></tr>`;
         });
         tableHTML += '</tbody></table>';
         document.getElementById('batchTableContent').innerHTML = tableHTML;
 
-        // Grouped by contract
         const grouped = {};
-        for (const r of data) {
-            const key = `${r.id}-${r.unidade}`;
-            if (!grouped[key]) grouped[key] = { ...r, parcelas: [] };
-            grouped[key].parcelas.push(r);
-        }
-
+        for (const r of data) { const key = `${r.id}-${r.unidade}`; if (!grouped[key]) grouped[key] = { ...r, parcelas: [] }; grouped[key].parcelas.push(r); }
         let groupHTML = '';
         for (const [key, g] of Object.entries(grouped)) {
             const indices = {};
-            g.parcelas.forEach(p => {
-                if (p.indiceIdentificado && p.status !== 'no') {
-                    const k = `${p.indiceIdentificado} (lag ${p.lag})`;
-                    indices[k] = (indices[k] || 0) + 1;
-                }
-            });
+            g.parcelas.forEach(p => { if (p.indiceIdentificado && p.status !== 'no') { const k = `${p.indiceIdentificado} (lag ${p.lag})`; indices[k] = (indices[k] || 0) + 1; } });
             const mainIndex = Object.entries(indices).sort((a,b) => b[1] - a[1])[0];
-
-            groupHTML += `<div style="margin-bottom:16px;padding:16px;background:rgba(255,255,255,0.03);border-radius:10px;">
+            groupHTML += `<div style="margin-bottom:16px;padding:16px;background:rgba(0,107,110,0.04);border-radius:10px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-                    <div>
-                        <strong style="color:#7eb8ff;">Contrato ${escapeHtml(g.id)} - Unidade ${escapeHtml(g.unidade)}</strong>
-                        <span style="color:#888;font-size:0.85em;margin-left:8px;">${escapeHtml(g.cliente)} | ${escapeHtml(g.empreendimento)}</span>
-                    </div>
-                    <div>
-                        ${mainIndex ? `<span class="badge badge-exact">Provavel: ${mainIndex[0]} (${mainIndex[1]}x)</span>` : '<span class="badge badge-no">Indefinido</span>'}
-                    </div>
+                    <div><strong style="color:var(--neo-teal-light);">Contrato ${escapeHtml(g.id)} - Unidade ${escapeHtml(g.unidade)}</strong>
+                        <span style="color:var(--neo-gray);font-size:0.85em;margin-left:8px;">${escapeHtml(g.cliente)} | ${escapeHtml(g.empreendimento)}</span></div>
+                    <div>${mainIndex ? `<span class="badge badge-exact">Provavel: ${mainIndex[0]} (${mainIndex[1]}x)</span>` : '<span class="badge badge-no">Indefinido</span>'}</div>
                 </div>
-                <table class="results-table"><thead><tr>
-                    <th>Parcela</th><th>Dt Venc.</th><th>Valor Orig.</th><th>Valor Pago</th><th>% Aplicado</th>
-                    <th>Indice</th><th>Lag</th><th>Status</th></tr></thead><tbody>`;
-
+                <table class="results-table"><thead><tr><th>Parcela</th><th>Dt Venc.</th><th>Valor Orig.</th><th>Valor Pago</th><th>% Aplicado</th><th>Indice</th><th>Lag</th><th>Status</th></tr></thead><tbody>`;
             for (const p of g.parcelas.sort((a,b) => a.dataVenc.localeCompare(b.dataVenc))) {
                 const bc = p.status === 'exact' ? 'badge-exact' : p.status === 'close' ? 'badge-close' : 'badge-no';
                 const st = p.status === 'exact' ? 'OK' : p.status === 'close' ? '~' : 'X';
                 groupHTML += `<tr class="${p.status === 'exact' ? 'highlight-row' : ''}">
-                    <td>${escapeHtml(p.parcela)}</td><td>${p.dataVenc}</td>
-                    <td>${formatBRL(p.valorOriginal)}</td><td>${formatBRL(p.valorPago)}</td>
-                    <td>${formatPercent(p.percentual)}</td>
-                    <td>${escapeHtml(p.indiceIdentificado)}</td>
-                    <td>${p.lag}</td>
-                    <td><span class="badge ${bc}">${st}</span></td></tr>`;
+                    <td>${escapeHtml(p.parcela)}</td><td>${p.dataVenc}</td><td>${formatBRL(p.valorOriginal)}</td>
+                    <td>${formatBRL(p.valorPago)}</td><td>${formatPercent(p.percentual)}</td>
+                    <td>${escapeHtml(p.indiceIdentificado)}</td><td>${p.lag}</td><td><span class="badge ${bc}">${st}</span></td></tr>`;
             }
             groupHTML += '</tbody></table></div>';
         }
         document.getElementById('batchAgrupadoContent').innerHTML = groupHTML;
 
-        // Index summary
         const indexCount = {};
         for (const r of data) {
             if (r.indiceIdentificado === 'Sem correcao' || r.indiceIdentificado === 'Periodo invalido') continue;
             const k = r.indiceIdentificado;
             if (!indexCount[k]) indexCount[k] = { exact: 0, close: 0, no: 0, total: 0 };
-            indexCount[k][r.status]++;
-            indexCount[k].total++;
+            indexCount[k][r.status]++; indexCount[k].total++;
         }
-
         let resumoHTML = '<table class="results-table"><thead><tr><th>Indice</th><th>Compativeis</th><th>Proximos</th><th>Divergentes</th><th>Total</th><th>% Compativel</th></tr></thead><tbody>';
-        const sortedIndices = Object.entries(indexCount).sort((a,b) => (b[1].exact + b[1].close) - (a[1].exact + a[1].close));
-        for (const [nome, counts] of sortedIndices) {
-            const pctCompat = ((counts.exact + counts.close) / counts.total * 100).toFixed(1);
-            resumoHTML += `<tr>
-                <td><strong>${escapeHtml(nome)}</strong></td>
-                <td style="color:#00e676;">${counts.exact}</td>
-                <td style="color:#ffab00;">${counts.close}</td>
-                <td style="color:#ff5252;">${counts.no}</td>
-                <td>${counts.total}</td>
-                <td><strong>${pctCompat}%</strong></td></tr>`;
+        for (const [nome, counts] of Object.entries(indexCount).sort((a,b) => (b[1].exact+b[1].close) - (a[1].exact+a[1].close))) {
+            const pct = ((counts.exact + counts.close) / counts.total * 100).toFixed(1);
+            resumoHTML += `<tr><td><strong>${escapeHtml(nome)}</strong></td>
+                <td style="color:#00b478;">${counts.exact}</td><td style="color:#c8a000;">${counts.close}</td>
+                <td style="color:#cc4444;">${counts.no}</td><td>${counts.total}</td><td><strong>${pct}%</strong></td></tr>`;
         }
         resumoHTML += '</tbody></table>';
         document.getElementById('batchResumoContent').innerHTML = resumoHTML;
-
         document.getElementById('statusBar').textContent = `Analise em lote concluida - ${data.length} parcelas analisadas`;
     }
-
-    // ==================== EXPORT ====================
 
     function exportCSV() {
         if (!batchResultsData.length) return;
@@ -1240,16 +1029,12 @@
         let csv = '﻿' + headers.join(';') + '\n';
         for (const r of batchResultsData) {
             const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-            csv += [r.id, r.unidade, r.cliente, r.empreendimento, r.parcela, r.dataVenc, r.dataReceb,
-                r.valorOriginal.toFixed(2).replace('.',','),
-                r.valorPago.toFixed(2).replace('.',','),
-                r.percentual.toFixed(4).replace('.',','),
-                r.indiceIdentificado, r.lag,
-                (r.correcaoCalculada || 0).toFixed(4).replace('.',','),
-                (r.diferenca || 0).toFixed(4).replace('.',','), st
-            ].join(';') + '\n';
+            csv += [r.id,r.unidade,r.cliente,r.empreendimento,r.parcela,r.dataVenc,r.dataReceb,
+                r.valorOriginal.toFixed(2).replace('.',','), r.valorPago.toFixed(2).replace('.',','),
+                r.percentual.toFixed(4).replace('.',','), r.indiceIdentificado, r.lag,
+                (r.correcaoCalculada||0).toFixed(4).replace('.',','), (r.diferenca||0).toFixed(4).replace('.',','), st].join(';') + '\n';
         }
-        downloadFile(csv, 'analise_indices.csv', 'text/csv;charset=utf-8');
+        downloadFile(csv, 'analise_indices_neo_service.csv', 'text/csv;charset=utf-8');
     }
 
     function exportXLSX() {
@@ -1258,13 +1043,13 @@
             'Valor Original','Valor Pago','% Aplicado','Indice Identificado','Defasagem (meses)','% Calculado','Diferenca %','Status']];
         for (const r of batchResultsData) {
             const st = r.status === 'exact' ? 'COMPATIVEL' : r.status === 'close' ? 'PROXIMO' : 'DIVERGENTE';
-            wsData.push([r.id, r.unidade, r.cliente, r.empreendimento, r.parcela, r.dataVenc, r.dataReceb,
-                r.valorOriginal, r.valorPago, r.percentual, r.indiceIdentificado, r.lag, r.correcaoCalculada || 0, r.diferenca || 0, st]);
+            wsData.push([r.id,r.unidade,r.cliente,r.empreendimento,r.parcela,r.dataVenc,r.dataReceb,
+                r.valorOriginal,r.valorPago,r.percentual,r.indiceIdentificado,r.lag,r.correcaoCalculada||0,r.diferenca||0,st]);
         }
         const ws = XLSX.utils.aoa_to_sheet(wsData);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Analise');
-        XLSX.writeFile(wb, 'analise_indices.xlsx');
+        XLSX.writeFile(wb, 'analise_indices_neo_service.xlsx');
     }
 
     function downloadFile(content, filename, type) {
@@ -1276,25 +1061,20 @@
         URL.revokeObjectURL(a.href);
     }
 
-    // ==================== INDICES TABLE ====================
-
     async function loadIndicesTable() {
         const now = new Date();
         const endDate = dateToStr(now);
         const startDate = dateToStr(new Date(now.getFullYear(), now.getMonth() - 13, 1));
-
         let tableHTML = '<table class="results-table"><thead><tr><th>Indice</th><th>Codigo SGS</th><th>Descricao</th><th>Ultimos Valores</th></tr></thead><tbody>';
-
         const promises = INDICES_CONFIG.map(async (idx) => {
             const data = await fetchBCBSeries(idx.codigo, startDate, endDate);
             let lastValues = '-';
             if (data && data.length > 0) {
                 const last3 = data.slice(-3);
-                lastValues = last3.map(d => `${d.data.substring(3)}: ${parseFloat(d.valor).toFixed(2).replace('.', ',')}%`).join(' | ');
+                lastValues = last3.map(d => `${d.data.substring(3)}: ${parseFloat(d.valor).toFixed(2).replace('.',',')}%`).join(' | ');
             }
             return { ...idx, lastValues };
         });
-
         const results = await Promise.all(promises);
         for (const r of results) {
             tableHTML += `<tr><td><strong>${r.nome}</strong></td><td>${r.codigo}</td><td>${r.descricao}</td>
