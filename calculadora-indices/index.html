@@ -428,6 +428,37 @@
                     </div>
                 </div>
 
+                <div class="habite-box">
+                    <label class="habite-toggle">
+                        <input type="checkbox" id="temCub" onchange="toggleCub()">
+                        <span>Incluir CUB (Custo Unitário Básico da Construção)</span>
+                    </label>
+                    <div id="cubFields" style="display:none;">
+                        <div class="info-box" style="margin-top:14px;">
+                            O <strong>CUB</strong> não é publicado pelo Banco Central — é divulgado mensalmente pelo
+                            SINDUSCON de cada estado e varia conforme o padrão construtivo (R1, R8-N, R16-A, etc.).
+                            Informe o <strong>valor do CUB</strong> (em R$/m²) na data base e na data da correção do seu
+                            estado/padrão para que o sistema calcule a variação e inclua o CUB no ranking de índices.
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Estado / Padrão (identificação)</label>
+                                <input type="text" id="cubLabel" placeholder="Ex: CUB/SC R8-N">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>CUB na Data Base (R$/m²)</label>
+                                <input type="text" id="cubInicio" placeholder="Ex: 2.345,67" oninput="formatMoney(this)">
+                            </div>
+                            <div class="form-group">
+                                <label>CUB na Data da Correção (R$/m²)</label>
+                                <input type="text" id="cubFim" placeholder="Ex: 2.510,89" oninput="formatMoney(this)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button class="btn" id="btnCalcular" onclick="calcular()">Identificar Índice Aplicado</button>
             </div>
 
@@ -612,6 +643,11 @@
         document.getElementById('preChavesFields').style.display = checked ? 'block' : 'none';
     }
 
+    function toggleCub() {
+        const checked = document.getElementById('temCub').checked;
+        document.getElementById('cubFields').style.display = checked ? 'block' : 'none';
+    }
+
     function getMonthsBetween(start, end) {
         const [sy, sm] = start.split('-').map(Number);
         const [ey, em] = end.split('-').map(Number);
@@ -778,6 +814,16 @@
         const dataEntregaChaves = document.getElementById('dataEntregaChaves').value;
         const lagPreChaves = temPreChaves ? parseInt(document.getElementById('lagPreChaves').value) : 0;
 
+        // CUB (entrada manual)
+        const temCub = document.getElementById('temCub').checked;
+        const cubInicio = temCub ? parseMoney(document.getElementById('cubInicio').value) : NaN;
+        const cubFim = temCub ? parseMoney(document.getElementById('cubFim').value) : NaN;
+        const cubLabel = (document.getElementById('cubLabel').value || '').trim() || 'CUB (manual)';
+        if (temCub && (isNaN(cubInicio) || isNaN(cubFim) || cubInicio <= 0)) {
+            alert('Informe os valores do CUB na data base e na data da correção (maiores que zero) ou desmarque a opção de CUB.');
+            return;
+        }
+
         if (temPreChaves && !dataEntregaChaves) {
             alert('Informe a data de entrega das chaves ou desmarque a opção de PRÉ-Chaves.');
             return;
@@ -844,6 +890,24 @@
                     });
                 }
             }
+            // CUB (entrada manual) — adiciona como candidato no ranking
+            if (temCub && !isNaN(cubInicio) && !isNaN(cubFim) && cubInicio > 0) {
+                const cubPercent = (cubFim / cubInicio - 1) * 100;
+                const fatorTotal = fatorPreChaves * (1 + cubPercent / 100) * fatorJuros;
+                const percentTotal = (fatorTotal - 1) * 100;
+                const diff = Math.abs(percentTotal - percentualAplicado);
+                const status = diff <= 0.05 ? 'exact' : diff <= 0.3 ? 'close' : 'no';
+                resultados.push({
+                    nome: cubLabel, descricao: 'CUB - Custo Unitário Básico (entrada manual)', lag: 0,
+                    percentIndice: cubPercent,
+                    percentPreChaves: temPreChaves ? percentPreChaves : 0,
+                    percentJuros: temHabiteSe ? (fatorJuros - 1) * 100 : 0,
+                    percentChange: percentTotal,
+                    valorCalculado: valorOriginal * fatorTotal,
+                    diff, status, missingMonths: [], monthsUsed: 0, isCub: true
+                });
+            }
+
             resultados.sort((a, b) => a.diff - b.diff);
             displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao,
                 { temHabiteSe, jurosMensal, mesesJuros, fatorJuros, temPreChaves, nomePreChaves, percentPreChaves, lagPreChaves });
@@ -1005,9 +1069,10 @@
             } else {
                 correcaoCols = `<td>${formatPercent(r.percentChange)}</td>`;
             }
+            const lagCell = r.isCub ? '<span class="badge badge-lag">manual</span>' : `<span class="badge badge-lag">${r.lag} mês(es)</span>`;
             rankingHTML += `<tr class="${rc}"><td>${i+1}</td>
                 <td><strong>${r.nome}</strong><br><small style="color:var(--neo-gray-dark)">${r.descricao}</small></td>
-                <td><span class="badge badge-lag">${r.lag} mês(es)</span></td>
+                <td>${lagCell}</td>
                 ${correcaoCols}<td>${formatBRL(r.valorCalculado)}</td>
                 <td>${formatPercent(r.diff)}</td><td><span class="badge ${bc}">${st}</span></td></tr>`;
         });
