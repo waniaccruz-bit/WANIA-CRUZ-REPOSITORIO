@@ -428,37 +428,6 @@
                     </div>
                 </div>
 
-                <div class="habite-box">
-                    <label class="habite-toggle">
-                        <input type="checkbox" id="temCub" onchange="toggleCub()">
-                        <span>Incluir CUB (Custo Unitário Básico da Construção)</span>
-                    </label>
-                    <div id="cubFields" style="display:none;">
-                        <div class="info-box" style="margin-top:14px;">
-                            O <strong>CUB</strong> não é publicado pelo Banco Central — é divulgado mensalmente pelo
-                            SINDUSCON de cada estado e varia conforme o padrão construtivo (R1, R8-N, R16-A, etc.).
-                            Informe o <strong>valor do CUB</strong> (em R$/m²) na data base e na data da correção do seu
-                            estado/padrão para que o sistema calcule a variação e inclua o CUB no ranking de índices.
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Estado / Padrão (identificação)</label>
-                                <input type="text" id="cubLabel" placeholder="Ex: CUB/SC R8-N">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>CUB na Data Base (R$/m²)</label>
-                                <input type="text" id="cubInicio" placeholder="Ex: 2.345,67" oninput="formatMoney(this)">
-                            </div>
-                            <div class="form-group">
-                                <label>CUB na Data da Correção (R$/m²)</label>
-                                <input type="text" id="cubFim" placeholder="Ex: 2.510,89" oninput="formatMoney(this)">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <button class="btn" id="btnCalcular" onclick="calcular()">Identificar Índice Aplicado</button>
             </div>
 
@@ -574,6 +543,35 @@
             </div>
         </div>
 
+        <!-- Cadastro da tabela CUB -->
+        <div class="card">
+            <h2>Cadastrar tabela CUB</h2>
+            <div class="info-box">
+                O <strong>CUB</strong> (Custo Unitário Básico da Construção) não é publicado pelo Banco Central —
+                cada <strong>SINDUSCON estadual</strong> divulga o seu, variando por estado e padrão construtivo
+                (R1, R8-N, R16-A, etc.). Cadastre aqui os valores mensais do CUB que você utiliza (R$/m²);
+                eles ficam salvos neste navegador e o <strong>CUB passa a ser avaliado automaticamente no ranking</strong>,
+                com defasagem 0, 1 ou 2 meses, igual aos demais índices.
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Identificação (estado / padrão)</label>
+                    <input type="text" id="cubLabel" placeholder="Ex: CUB/SC R8-N">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label>Valores mensais do CUB (um por linha: MM/AAAA  valor)</label>
+                <textarea id="cubTextarea" rows="8" placeholder="Exemplo:&#10;06/2023  2.150,30&#10;07/2023  2.158,90&#10;08/2023  2.170,45&#10;09/2023  2.181,10"
+                    style="background:rgba(0,107,110,0.08); border:1px solid rgba(0,107,110,0.2); border-radius:8px; padding:12px 14px; color:#fff; font-size:0.95em; font-family:monospace; resize:vertical;"></textarea>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn btn-export" style="margin:0;" onclick="salvarTabelaCub()">Salvar tabela CUB</button>
+                <button class="btn btn-export" style="margin:0; background:linear-gradient(135deg,#3a5a5a,var(--neo-gray-dark));" onclick="limparTabelaCub()">Limpar</button>
+            </div>
+            <p id="cubStatus" style="font-size:0.85em; margin-top:12px; min-height:1.2em;"></p>
+            <div id="cubResumo"></div>
+        </div>
+
         <div class="status-bar" id="statusBar">Conectando com fontes de dados...</div>
 
         <div class="footer">
@@ -600,6 +598,7 @@
         { nome: "TR", codigo: 226, fonte: "BCB", descricao: "Taxa Referencial" },
         { nome: "TJLP", codigo: 256, fonte: "BCB", descricao: "Taxa de Juros de Longo Prazo" },
         { nome: "Poupança", codigo: 25, fonte: "BCB", descricao: "Rendimento da poupança (1º dia)" },
+        { nome: "CUB", codigo: "CUB", fonte: "SINDUSCON", descricao: "Custo Unitário Básico da Construção (tabela cadastrada)", manual: true },
     ];
 
     let indicesData = {};
@@ -643,9 +642,120 @@
         document.getElementById('preChavesFields').style.display = checked ? 'block' : 'none';
     }
 
-    function toggleCub() {
-        const checked = document.getElementById('temCub').checked;
-        document.getElementById('cubFields').style.display = checked ? 'block' : 'none';
+    // ==================== CUB (tabela cadastrada) ====================
+    // O CUB não é publicado pelo Banco Central. O usuário cadastra uma vez
+    // os valores mensais (R$/m²) do seu estado/padrão; ficam salvos no
+    // navegador (localStorage) e o CUB passa a ser avaliado automaticamente
+    // como qualquer outro índice, com defasagem 0/1/2.
+    const CUB_STORAGE_KEY = 'neoservice_cub_tabela';
+
+    function getCubConfig() {
+        try {
+            const raw = localStorage.getItem(CUB_STORAGE_KEY);
+            if (!raw) return { label: '', valores: {} };
+            const obj = JSON.parse(raw);
+            return { label: obj.label || '', valores: obj.valores || {} };
+        } catch (e) { return { label: '', valores: {} }; }
+    }
+
+    function saveCubConfig(label, valores) {
+        localStorage.setItem(CUB_STORAGE_KEY, JSON.stringify({ label, valores }));
+    }
+
+    // Converte os valores mensais do CUB (R$/m²) em variações percentuais mensais
+    // no formato esperado pelo calcAccumulatedIndex: { 'AAAA-MM': %variacao }.
+    function buildCubMonthlyData(valores) {
+        const monthly = {};
+        const months = Object.keys(valores).sort();
+        for (let i = 1; i < months.length; i++) {
+            const prev = valores[months[i - 1]];
+            const cur = valores[months[i]];
+            // só calcula variação se os meses forem consecutivos
+            if (addMonths(months[i - 1], 1) === months[i] && prev > 0) {
+                monthly[months[i]] = (cur / prev - 1) * 100;
+            }
+        }
+        return monthly;
+    }
+
+    // Faz o parse do texto colado pelo usuário: cada linha "MM/AAAA valor" ou "AAAA-MM valor".
+    function parseCubText(text) {
+        const valores = {};
+        const lines = text.split(/\n/);
+        for (const line of lines) {
+            const t = line.trim();
+            if (!t) continue;
+            // separa mês e valor (último número da linha é o valor)
+            let m = t.match(/(\d{1,2})[\/\-](\d{4})\D+([\d.,]+)\s*$/);
+            let mes, valStr;
+            if (m) { mes = `${m[2]}-${m[1].padStart(2, '0')}`; valStr = m[3]; }
+            else {
+                m = t.match(/(\d{4})[\/\-](\d{1,2})\D+([\d.,]+)\s*$/);
+                if (m) { mes = `${m[1]}-${m[2].padStart(2, '0')}`; valStr = m[3]; }
+                else continue;
+            }
+            const val = parseMoney(valStr);
+            if (!isNaN(val) && val > 0) valores[mes] = val;
+        }
+        return valores;
+    }
+
+    function salvarTabelaCub() {
+        const label = (document.getElementById('cubLabel').value || '').trim();
+        const text = document.getElementById('cubTextarea').value || '';
+        const valores = parseCubText(text);
+        const n = Object.keys(valores).length;
+        if (n === 0) {
+            document.getElementById('cubStatus').innerHTML = '<span class="error">Nenhum valor válido reconhecido. Use o formato "MM/AAAA valor" (um por linha).</span>';
+            return;
+        }
+        saveCubConfig(label, valores);
+        const meses = Object.keys(valores).sort();
+        document.getElementById('cubStatus').innerHTML =
+            `<span style="color:#00b478;">Tabela CUB salva: ${n} mês(es) (${meses[0]} a ${meses[meses.length-1]}). ` +
+            `O CUB agora é avaliado automaticamente no ranking de índices.</span>`;
+        renderCubResumo();
+    }
+
+    function limparTabelaCub() {
+        localStorage.removeItem(CUB_STORAGE_KEY);
+        document.getElementById('cubLabel').value = '';
+        document.getElementById('cubTextarea').value = '';
+        document.getElementById('cubStatus').innerHTML = '<span style="color:var(--neo-gray);">Tabela CUB removida.</span>';
+        renderCubResumo();
+    }
+
+    function renderCubResumo() {
+        const cfg = getCubConfig();
+        const meses = Object.keys(cfg.valores).sort();
+        const el = document.getElementById('cubResumo');
+        if (!el) return;
+        if (meses.length === 0) { el.innerHTML = ''; return; }
+        const monthly = buildCubMonthlyData(cfg.valores);
+        let rows = '';
+        for (const m of meses) {
+            const v = monthly[m];
+            rows += `<tr><td>${m}</td><td style="text-align:right;">${formatBRL(cfg.valores[m])}</td>
+                <td style="text-align:right;">${v !== undefined ? formatPercent(v) : '-'}</td></tr>`;
+        }
+        el.innerHTML = `<p style="font-size:0.82em;color:var(--neo-gray);margin:10px 0 6px;">
+            Tabela cadastrada${cfg.label ? ' (' + escapeHtml(cfg.label) + ')' : ''}: ${meses.length} mês(es)</p>
+            <div class="preview-container"><table class="results-table">
+            <thead><tr><th>Mês</th><th style="text-align:right;">Valor (R$/m²)</th><th style="text-align:right;">Variação</th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`;
+    }
+
+    function loadCubIntoForm() {
+        const cfg = getCubConfig();
+        if (document.getElementById('cubLabel')) document.getElementById('cubLabel').value = cfg.label || '';
+        const meses = Object.keys(cfg.valores).sort();
+        if (meses.length && document.getElementById('cubTextarea')) {
+            document.getElementById('cubTextarea').value = meses.map(m => {
+                const [y, mm] = m.split('-');
+                return `${mm}/${y} ${cfg.valores[m].toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+            }).join('\n');
+        }
+        renderCubResumo();
     }
 
     function getMonthsBetween(start, end) {
@@ -736,6 +846,7 @@
         const dataFim = dateToStr(endDate);
 
         const promises = INDICES_CONFIG.map(async (idx) => {
+            if (idx.manual) return { ...idx, rawData: null };
             const data = await fetchBCBSeries(idx.codigo, dataInicio, dataFim);
             return { ...idx, rawData: data };
         });
@@ -743,6 +854,14 @@
         const results = await Promise.all(promises);
 
         for (const result of results) {
+            // Índices manuais (ex: CUB) usam a tabela cadastrada pelo usuário
+            if (result.manual) {
+                const cfg = getCubConfig();
+                const monthlyData = buildCubMonthlyData(cfg.valores);
+                const nome = cfg.label ? `CUB (${cfg.label})` : result.nome;
+                indicesData[nome] = { ...result, nome, monthlyData };
+                continue;
+            }
             const monthlyData = {};
             if (result.rawData && Array.isArray(result.rawData)) {
                 for (const item of result.rawData) {
@@ -814,16 +933,6 @@
         const dataEntregaChaves = document.getElementById('dataEntregaChaves').value;
         const lagPreChaves = temPreChaves ? parseInt(document.getElementById('lagPreChaves').value) : 0;
 
-        // CUB (entrada manual)
-        const temCub = document.getElementById('temCub').checked;
-        const cubInicio = temCub ? parseMoney(document.getElementById('cubInicio').value) : NaN;
-        const cubFim = temCub ? parseMoney(document.getElementById('cubFim').value) : NaN;
-        const cubLabel = (document.getElementById('cubLabel').value || '').trim() || 'CUB (manual)';
-        if (temCub && (isNaN(cubInicio) || isNaN(cubFim) || cubInicio <= 0)) {
-            alert('Informe os valores do CUB na data base e na data da correção (maiores que zero) ou desmarque a opção de CUB.');
-            return;
-        }
-
         if (temPreChaves && !dataEntregaChaves) {
             alert('Informe a data de entrega das chaves ou desmarque a opção de PRÉ-Chaves.');
             return;
@@ -890,24 +999,6 @@
                     });
                 }
             }
-            // CUB (entrada manual) — adiciona como candidato no ranking
-            if (temCub && !isNaN(cubInicio) && !isNaN(cubFim) && cubInicio > 0) {
-                const cubPercent = (cubFim / cubInicio - 1) * 100;
-                const fatorTotal = fatorPreChaves * (1 + cubPercent / 100) * fatorJuros;
-                const percentTotal = (fatorTotal - 1) * 100;
-                const diff = Math.abs(percentTotal - percentualAplicado);
-                const status = diff <= 0.05 ? 'exact' : diff <= 0.3 ? 'close' : 'no';
-                resultados.push({
-                    nome: cubLabel, descricao: 'CUB - Custo Unitário Básico (entrada manual)', lag: 0,
-                    percentIndice: cubPercent,
-                    percentPreChaves: temPreChaves ? percentPreChaves : 0,
-                    percentJuros: temHabiteSe ? (fatorJuros - 1) * 100 : 0,
-                    percentChange: percentTotal,
-                    valorCalculado: valorOriginal * fatorTotal,
-                    diff, status, missingMonths: [], monthsUsed: 0, isCub: true
-                });
-            }
-
             resultados.sort((a, b) => a.diff - b.diff);
             displayResults(resultados, percentualAplicado, valorOriginal, valorCorrigido, dataBase, dataCorrecao,
                 { temHabiteSe, jurosMensal, mesesJuros, fatorJuros, temPreChaves, nomePreChaves, percentPreChaves, lagPreChaves });
@@ -1069,10 +1160,9 @@
             } else {
                 correcaoCols = `<td>${formatPercent(r.percentChange)}</td>`;
             }
-            const lagCell = r.isCub ? '<span class="badge badge-lag">manual</span>' : `<span class="badge badge-lag">${r.lag} mês(es)</span>`;
             rankingHTML += `<tr class="${rc}"><td>${i+1}</td>
                 <td><strong>${r.nome}</strong><br><small style="color:var(--neo-gray-dark)">${r.descricao}</small></td>
-                <td>${lagCell}</td>
+                <td><span class="badge badge-lag">${r.lag} mês(es)</span></td>
                 ${correcaoCols}<td>${formatBRL(r.valorCalculado)}</td>
                 <td>${formatPercent(r.diff)}</td><td><span class="badge ${bc}">${st}</span></td></tr>`;
         });
@@ -1408,6 +1498,19 @@
         const startDate = dateToStr(new Date(now.getFullYear(), now.getMonth() - 13, 1));
         let tableHTML = '<table class="results-table"><thead><tr><th>Índice</th><th>Código SGS</th><th>Descrição</th><th>Últimos Valores</th></tr></thead><tbody>';
         const promises = INDICES_CONFIG.map(async (idx) => {
+            if (idx.manual) {
+                const cfg = getCubConfig();
+                const monthly = buildCubMonthlyData(cfg.valores);
+                const meses = Object.keys(monthly).sort();
+                let lastValues = 'Tabela não cadastrada — clique em "Cadastrar tabela CUB" abaixo';
+                if (meses.length > 0) {
+                    lastValues = meses.slice(-3).map(m => {
+                        const [y, mm] = m.split('-');
+                        return `${mm}/${y}: ${monthly[m].toFixed(2).replace('.',',')}%`;
+                    }).join(' | ');
+                }
+                return { ...idx, codigo: 'SINDUSCON', lastValues };
+            }
             const data = await fetchBCBSeries(idx.codigo, startDate, endDate);
             let lastValues = '-';
             if (data && data.length > 0) {
@@ -1428,6 +1531,7 @@
     }
 
     loadIndicesTable();
+    loadCubIntoForm();
     </script>
 </body>
 </html>
