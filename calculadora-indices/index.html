@@ -545,13 +545,15 @@
 
         <!-- Cadastro da tabela CUB -->
         <div class="card">
-            <h2>Cadastrar tabela CUB</h2>
+            <h2>Tabela CUB</h2>
             <div class="info-box">
-                O <strong>CUB</strong> (Custo Unitário Básico da Construção) não é publicado pelo Banco Central —
-                cada <strong>SINDUSCON estadual</strong> divulga o seu, variando por estado e padrão construtivo
-                (R1, R8-N, R16-A, etc.). Cadastre aqui os valores mensais do CUB que você utiliza (R$/m²);
-                eles ficam salvos neste navegador e o <strong>CUB passa a ser avaliado automaticamente no ranking</strong>,
-                com defasagem 0, 1 ou 2 meses, igual aos demais índices.
+                A calculadora já vem com a <strong>série histórica oficial do CUB/SP Global</strong>
+                (Fonte: SindusCon-SP / FGV), de fev/2007 a mai/2026 — o <strong>CUB já é avaliado automaticamente
+                no ranking</strong>, com defasagem 0, 1 ou 2 meses, igual aos demais índices.
+                <br><br>
+                Se o seu contrato usa o CUB de <strong>outro estado ou padrão construtivo</strong> (R1, R8-N, R16-A, etc.),
+                cadastre abaixo os valores mensais (R$/m²) para <strong>sobrescrever</strong> a série padrão.
+                Os dados ficam salvos neste navegador.
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -598,8 +600,44 @@
         { nome: "TR", codigo: 226, fonte: "BCB", descricao: "Taxa Referencial" },
         { nome: "TJLP", codigo: 256, fonte: "BCB", descricao: "Taxa de Juros de Longo Prazo" },
         { nome: "Poupança", codigo: 25, fonte: "BCB", descricao: "Rendimento da poupança (1º dia)" },
-        { nome: "CUB", codigo: "CUB", fonte: "SINDUSCON", descricao: "Custo Unitário Básico da Construção (tabela cadastrada)", manual: true },
+        { nome: "CUB", codigo: "CUB", fonte: "SINDUSCON", descricao: "Custo Unitário Básico da Construção (CUB/SP Global - SindusCon-SP/FGV)", manual: true },
     ];
+
+    // Série histórica oficial do CUB/SP Global (R$/m²) - Fonte: SindusCon-SP / FGV.
+    // Série contínua de fev/2007 a mai/2026 (atualizada com a planilha CubSerieHistoricaMaio26).
+    // O usuário pode sobrescrever com a tabela de outro estado/padrão pelo cadastro manual.
+    const CUB_DEFAULT_LABEL = 'CUB/SP Global (SindusCon-SP/FGV)';
+    const CUB_DEFAULT_VALUES = {
+        "2007-02":676.41,"2007-03":676.12,"2007-04":681.93,"2007-05":693.79,"2007-06":704.42,"2007-07":708.86,"2007-08":712.36,"2007-09":715.24,
+        "2007-10":720.47,"2007-11":726.69,"2007-12":734.14,"2008-01":736.61,"2008-02":739.63,"2008-03":744.99,"2008-04":748.45,"2008-05":767.68,
+        "2008-06":782.65,"2008-07":787.91,"2008-08":799.06,"2008-09":804.46,"2008-10":815.94,"2008-11":816.27,"2008-12":814.0,"2009-01":816.55,
+        "2009-02":820.88,"2009-03":820.29,"2009-04":819.15,"2009-05":831.26,"2009-06":840.46,"2009-07":843.76,"2009-08":842.58,"2009-09":843.57,
+        "2009-10":843.88,"2009-11":845.13,"2009-12":844.98,"2010-01":846.16,"2010-02":847.47,"2010-03":849.16,"2010-04":850.68,"2010-05":870.55,
+        "2010-06":887.1,"2010-07":891.99,"2010-08":893.4,"2010-09":892.66,"2010-10":892.31,"2010-11":891.6,"2010-12":891.57,"2011-01":893.87,
+        "2011-02":895.19,"2011-03":896.24,"2011-04":897.89,"2011-05":927.82,"2011-06":939.3,"2011-07":939.41,"2011-08":940.46,"2011-09":942.06,
+        "2011-10":942.45,"2011-11":942.83,"2011-12":943.06,"2012-01":944.61,"2012-02":947.92,"2012-03":951.46,"2012-04":952.72,"2012-05":981.42,
+        "2012-06":998.08,"2012-07":1002.89,"2012-08":1004.38,"2012-09":1005.07,"2012-10":1007.71,"2012-11":1010.0,"2012-12":1010.38,"2013-01":1011.02,
+        "2013-02":1010.98,"2013-03":1012.92,"2013-04":1015.31,"2013-05":1058.4,"2013-06":1075.35,"2013-07":1078.25,"2013-08":1079.61,"2013-09":1081.05,
+        "2013-10":1083.75,"2013-11":1084.66,"2013-12":1085.31,"2014-01":1086.33,"2014-02":1088.96,"2014-03":1090.28,"2014-04":1092.16,"2014-05":1110.16,
+        "2014-06":1139.52,"2014-07":1145.84,"2014-08":1152.68,"2014-09":1153.7,"2014-10":1155.67,"2014-11":1155.86,"2014-12":1156.71,"2015-01":1160.92,
+        "2015-02":1161.95,"2015-03":1162.75,"2015-04":1166.54,"2015-05":1190.85,"2015-06":1204.78,"2015-07":1209.08,"2015-08":1210.59,"2015-09":1213.14,
+        "2015-10":1213.45,"2015-11":1213.8,"2015-12":1216.1,"2016-01":1220.59,"2016-02":1221.12,"2016-03":1221.35,"2016-04":1223.07,"2016-05":1223.7,
+        "2016-06":1262.47,"2016-07":1276.76,"2016-08":1277.25,"2016-09":1279.8,"2016-10":1280.35,"2016-11":1280.56,"2016-12":1280.48,"2017-01":1280.74,
+        "2017-02":1281.39,"2017-03":1281.9,"2017-04":1280.6,"2017-05":1293.31,"2017-06":1301.3,"2017-07":1301.74,"2017-08":1304.91,"2017-09":1307.92,
+        "2017-10":1310.11,"2017-11":1310.96,"2017-12":1313.52,"2018-01":1318.1,"2018-02":1321.32,"2018-03":1321.1,"2018-04":1323.43,"2018-05":1329.77,
+        "2018-06":1337.83,"2018-07":1341.8,"2018-08":1345.22,"2018-09":1344.7,"2018-10":1346.89,"2018-11":1350.27,"2018-12":1351.31,"2019-01":1357.34,
+        "2019-02":1361.37,"2019-03":1362.86,"2019-04":1366.3,"2019-05":1367.18,"2019-06":1390.93,"2019-07":1402.9,"2019-08":1404.12,"2019-09":1405.85,
+        "2019-10":1407.09,"2019-11":1408.56,"2019-12":1408.99,"2020-01":1414.9,"2020-02":1415.38,"2020-03":1416.73,"2020-04":1411.52,"2020-05":1413.48,
+        "2020-06":1431.35,"2020-07":1444.05,"2020-08":1451.36,"2020-09":1470.48,"2020-10":1484.51,"2020-11":1495.21,"2020-12":1502.24,"2021-01":1515.83,
+        "2021-02":1534.02,"2021-03":1556.33,"2021-04":1573.29,"2021-05":1607.78,"2021-06":1652.91,"2021-07":1665.82,"2021-08":1678.67,"2021-09":1691.33,
+        "2021-10":1697.93,"2021-11":1704.26,"2021-12":1708.08,"2022-01":1715.89,"2022-02":1722.36,"2022-03":1728.12,"2022-04":1738.81,"2022-05":1807.46,
+        "2022-06":1848.36,"2022-07":1862.98,"2022-08":1865.76,"2022-09":1866.76,"2022-10":1867.02,"2022-11":1866.85,"2022-12":1870.26,"2023-01":1870.52,
+        "2023-02":1870.91,"2023-03":1869.38,"2023-04":1873.7,"2023-05":1898.65,"2023-06":1910.34,"2023-07":1912.83,"2023-08":1914.64,"2023-09":1914.19,
+        "2023-10":1913.64,"2023-11":1915.58,"2023-12":1915.44,"2024-01":1915.97,"2024-02":1918.36,"2024-03":1919.85,"2024-04":1922.27,"2024-05":1946.91,
+        "2024-06":1960.86,"2024-07":1969.47,"2024-08":1975.48,"2024-09":1980.1,"2024-10":1986.27,"2024-11":1989.13,"2024-12":1992.74,"2025-01":1996.41,
+        "2025-02":1997.9,"2025-03":2002.75,"2025-04":2008.97,"2025-05":2023.21,"2025-06":2041.56,"2025-07":2055.47,"2025-08":2067.46,"2025-09":2070.87,
+        "2025-10":2074.98,"2025-11":2080.78,"2025-12":2086.96,"2026-01":2091.42,"2026-02":2093.44,"2026-03":2094.99,"2026-04":2105.28,"2026-05":2129.49
+    };
 
     let indicesData = {};
     let calculating = false;
@@ -652,10 +690,15 @@
     function getCubConfig() {
         try {
             const raw = localStorage.getItem(CUB_STORAGE_KEY);
-            if (!raw) return { label: '', valores: {} };
-            const obj = JSON.parse(raw);
-            return { label: obj.label || '', valores: obj.valores || {} };
-        } catch (e) { return { label: '', valores: {} }; }
+            if (raw) {
+                const obj = JSON.parse(raw);
+                if (obj && obj.valores && Object.keys(obj.valores).length > 0) {
+                    return { label: obj.label || '', valores: obj.valores, isDefault: false };
+                }
+            }
+        } catch (e) { /* usa padrão */ }
+        // Sem cadastro do usuário: usa a série histórica oficial embutida (CUB/SP Global)
+        return { label: CUB_DEFAULT_LABEL, valores: CUB_DEFAULT_VALUES, isDefault: true };
     }
 
     function saveCubConfig(label, valores) {
@@ -721,7 +764,7 @@
         localStorage.removeItem(CUB_STORAGE_KEY);
         document.getElementById('cubLabel').value = '';
         document.getElementById('cubTextarea').value = '';
-        document.getElementById('cubStatus').innerHTML = '<span style="color:var(--neo-gray);">Tabela CUB removida.</span>';
+        document.getElementById('cubStatus').innerHTML = '<span style="color:var(--neo-gray);">Tabela própria removida. A calculadora volta a usar a série oficial embutida (CUB/SP Global).</span>';
         renderCubResumo();
     }
 
@@ -732,29 +775,43 @@
         if (!el) return;
         if (meses.length === 0) { el.innerHTML = ''; return; }
         const monthly = buildCubMonthlyData(cfg.valores);
+        // mostra apenas os últimos 12 meses no resumo para não poluir
+        const ultimos = meses.slice(-12);
         let rows = '';
-        for (const m of meses) {
+        for (const m of ultimos) {
             const v = monthly[m];
             rows += `<tr><td>${m}</td><td style="text-align:right;">${formatBRL(cfg.valores[m])}</td>
                 <td style="text-align:right;">${v !== undefined ? formatPercent(v) : '-'}</td></tr>`;
         }
+        const origem = cfg.isDefault
+            ? `<span style="color:#00b478;">Série oficial embutida</span> &mdash; ${escapeHtml(cfg.label)}`
+            : `<span style="color:#00b478;">Tabela cadastrada por você</span>${cfg.label ? ' (' + escapeHtml(cfg.label) + ')' : ''}`;
         el.innerHTML = `<p style="font-size:0.82em;color:var(--neo-gray);margin:10px 0 6px;">
-            Tabela cadastrada${cfg.label ? ' (' + escapeHtml(cfg.label) + ')' : ''}: ${meses.length} mês(es)</p>
+            ${origem}: ${meses.length} mês(es) (${meses[0]} a ${meses[meses.length-1]}). Mostrando os últimos 12:</p>
             <div class="preview-container"><table class="results-table">
             <thead><tr><th>Mês</th><th style="text-align:right;">Valor (R$/m²)</th><th style="text-align:right;">Variação</th></tr></thead>
             <tbody>${rows}</tbody></table></div>`;
     }
 
     function loadCubIntoForm() {
-        const cfg = getCubConfig();
-        if (document.getElementById('cubLabel')) document.getElementById('cubLabel').value = cfg.label || '';
-        const meses = Object.keys(cfg.valores).sort();
-        if (meses.length && document.getElementById('cubTextarea')) {
-            document.getElementById('cubTextarea').value = meses.map(m => {
-                const [y, mm] = m.split('-');
-                return `${mm}/${y} ${cfg.valores[m].toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
-            }).join('\n');
-        }
+        // Preenche o formulário apenas com a tabela própria do usuário (se houver).
+        // A série oficial embutida não é despejada no textarea.
+        try {
+            const raw = localStorage.getItem(CUB_STORAGE_KEY);
+            if (raw) {
+                const obj = JSON.parse(raw);
+                if (obj && obj.valores && Object.keys(obj.valores).length > 0) {
+                    if (document.getElementById('cubLabel')) document.getElementById('cubLabel').value = obj.label || '';
+                    const meses = Object.keys(obj.valores).sort();
+                    if (document.getElementById('cubTextarea')) {
+                        document.getElementById('cubTextarea').value = meses.map(m => {
+                            const [y, mm] = m.split('-');
+                            return `${mm}/${y} ${obj.valores[m].toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+                        }).join('\n');
+                    }
+                }
+            }
+        } catch (e) { /* ignora */ }
         renderCubResumo();
     }
 
